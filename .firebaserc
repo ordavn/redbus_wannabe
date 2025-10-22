@@ -1,6 +1,7 @@
 {
   "projects": {
-    "default": "redbus-wannabe"
+    "default": "redbus-wannabe",
+    "redbus_wannabe": "redbus-wannabe"
   },
   "targets": {},
   "etags": {}
