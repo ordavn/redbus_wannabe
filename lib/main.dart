@@ -2,12 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 // Impor halaman dari folder baru
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/forget_password_page.dart';
 import 'screens/home_page.dart';
+import 'screens/user_profile_screen.dart';
 
 Future<void> main() async {
   // Pastikan Flutter dan Firebase sudah siap sebelum app berjalan
