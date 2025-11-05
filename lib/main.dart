@@ -9,7 +9,7 @@ import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/forget_password_page.dart';
 import 'screens/home_page.dart';
-import 'screens/user_profile_screen.dart';
+import 'screens/user_profile_screen.dart'; // <-- 1. Make sure this import is here
 
 Future<void> main() async {
   // Pastikan Flutter dan Firebase sudah siap sebelum app berjalan
@@ -26,19 +26,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Redbus Wannabe Auth',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.orange),
+    // 2. Wrap your MaterialApp with ScreenUtilInit
+    return ScreenUtilInit(
+      designSize: const Size(360, 690), // Or your Figma design size
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'Redbus Wannabe Auth',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(primarySwatch: Colors.orange),
 
-      // Cek apakah user sudah login atau belum, lalu arahkan
-      initialRoute: FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
-      
-      routes: {
-        '/register': (context) => const RegisterPage(),
-        '/login': (context) => const LoginPage(),
-        '/forget': (context) => const ForgetPasswordPage(),
-        '/home': (context) => const HomePage(),
+          // Cek apakah user sudah login atau belum, lalu arahkan
+          initialRoute: FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
+
+          routes: {
+            '/register': (context) => const RegisterPage(),
+            '/login': (context) => const LoginPage(),
+            '/forget': (context) => const ForgetPasswordPage(),
+            '/home': (context) => const HomePage(),
+            '/profile': (context) => UserProfileScreen(), // <-- 3. Add this line for the profile route
+          },
+        );
       },
     );
   }
