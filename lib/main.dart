@@ -11,7 +11,8 @@ import 'screens/forget_password_page.dart';
 import 'screens/home_page.dart';
 import 'screens/user_profile_screen.dart';
 import 'screens/offers_page.dart';
-import 'screens/bookings_page.dart'; // <-- 1. ADD THIS IMPORT
+import 'screens/bookings_page.dart';
+import 'screens/personal_information_page.dart';
 
 Future<void> main() async {
   // Pastikan Flutter dan Firebase sudah siap sebelum app berjalan
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 2. Wrap your MaterialApp with ScreenUtilInit
+    // Wrap your MaterialApp with ScreenUtilInit
     return ScreenUtilInit(
       designSize: const Size(360, 690), // Or your Figma design size
       minTextAdapt: true,
@@ -49,8 +50,9 @@ class MyApp extends StatelessWidget {
             '/forget': (context) => const ForgetPasswordPage(),
             '/home': (context) => const HomePage(),
             '/profile': (context) => UserProfileScreen(),
-            '/offers': (context) => const OffersScreen(), // Added const
-            '/bookings': (context) => const BookingsPage(), // <-- 2. ADD THIS ROUTE
+            '/offers': (context) => const OffersScreen(),
+            '/bookings': (context) => const BookingsPage(),
+            '/personal-info': (context) => const PersonalInformationPage(),
           },
         );
       },
