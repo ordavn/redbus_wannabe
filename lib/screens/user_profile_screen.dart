@@ -40,8 +40,8 @@ class UserProfileScreen extends StatelessWidget {
               Navigator.pushReplacementNamed(context, '/home');
               break;
             case 1:
-              // TODO: Navigate to Bookings
-              print('Bookings tapped');
+              // Navigate to Bookings
+              Navigator.pushReplacementNamed(context, '/bookings');
               break;
             case 2:
               // We are already on the Profile page, do nothing.

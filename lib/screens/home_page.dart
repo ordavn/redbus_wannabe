@@ -583,9 +583,8 @@ class _HomePageState extends State<HomePage> {
             // We are already on the Home page, do nothing.
             break;
           case 1:
-            // TODO: Navigate to Bookings
-            print('Bookings tapped');
-            // Navigator.pushReplacementNamed(context, '/bookings');
+            // Navigate to Bookings
+            Navigator.pushReplacementNamed(context, '/bookings');
             break;
           case 2:
             // Navigate to Profile
