@@ -34,6 +34,60 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+
+      // --- ADD THIS ENTIRE BLOCK ---
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        
+        // 1. THIS IS THE IMPORTANT CHANGE
+        currentIndex: 0, // 'Home' is the 1st item (index 0)
+
+        selectedItemColor: Colors.teal[600],
+        unselectedItemColor: Colors.black87,
+        // In home_page.dart, inside the BottomNavigationBar
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              // We are already on the Home page, do nothing.
+              break;
+            case 1:
+              // TODO: Navigate to Bookings
+              print('Bookings tapped');
+              break;
+            case 2:
+              // TODO: Navigate to Referral
+              print('Referral tapped');
+              break;
+            case 3:
+              // Navigate to Profile
+              Navigator.pushReplacementNamed(context, '/profile');
+              break;
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today_outlined),
+            activeIcon: Icon(Icons.calendar_today),
+            label: 'Bookings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.card_giftcard_outlined),
+            activeIcon: Icon(Icons.card_giftcard),
+            label: 'Referral',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+      // --- END OF NEW BLOCK ---
     );
   }
 }
