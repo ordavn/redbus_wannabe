@@ -30,10 +30,26 @@ class UserProfileScreen extends StatelessWidget {
         currentIndex: 3, // 'Profile' is the 4th item (index 3)
         selectedItemColor: Colors.teal[600],
         unselectedItemColor: Colors.black87,
-        onTap: (index) {
-          // Handle navigation here
-          print('Tapped index: $index');
-        },
+        // In user_profile_screen.dart, inside the BottomNavigationBar
+onTap: (index) {
+  switch (index) {
+    case 0:
+      // Navigate to Home
+      Navigator.pushReplacementNamed(context, '/home');
+      break;
+    case 1:
+      // TODO: Navigate to Bookings
+      print('Bookings tapped');
+      break;
+    case 2:
+      // TODO: Navigate to Referral
+      print('Referral tapped');
+      break;
+    case 3:
+      // We are already on the Profile page, do nothing.
+      break;
+  }
+},
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
