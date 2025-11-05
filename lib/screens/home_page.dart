@@ -492,7 +492,9 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/offers');
+                },
                 child: Text(
                   "View all",
                   style: TextStyle(

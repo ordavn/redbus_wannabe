@@ -221,7 +221,9 @@ class UserProfileScreen extends StatelessWidget {
             context,
             icon: Icons.local_offer, // Using a standard icon
             title: 'Offers',
-            onTap: () => print('Offers tapped'),
+            onTap: () {
+                Navigator.pushNamed(context, '/offers');
+            },
           ),
           const Divider(indent: 18, endIndent: 18),
           _buildMenuRow(
