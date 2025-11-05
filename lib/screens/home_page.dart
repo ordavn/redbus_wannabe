@@ -523,7 +523,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildOfferCard() {
     return Container(
       width: 250.w,
-      padding: EdgeInsets.all(16.r),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: _darkGreen,
         borderRadius: BorderRadius.circular(12.r), // This rounding is correct
