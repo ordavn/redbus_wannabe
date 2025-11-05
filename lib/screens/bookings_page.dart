@@ -62,6 +62,175 @@ class _BookingsPageState extends State<BookingsPage> {
     */
   }
 
+// Method to show cancel confirmation dialog
+void _showCancelDialog(BuildContext context, Booking booking) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Are you sure that you want to cancel this booking?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  // Yes button (Red)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close confirmation dialog
+                        
+                        // TODO: Add actual cancel booking logic here
+                        // For example: Update Firebase, change booking status, etc.
+                        
+                        // Show success dialog
+                        _showBookingCanceledDialog(context);
+                        
+                        print('Booking canceled: ${booking.id}');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: _canceledRed, width: 2),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Yes',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: _canceledRed,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  // No button (Green)
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _teal,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                      ),
+                      child: Text(
+                        'No',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+// Method to show booking canceled success dialog
+void _showBookingCanceledDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevent dismissing by tapping outside
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(32.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Checkmark icon
+              Container(
+                width: 100.w,
+                height: 100.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.grey[400]!,
+                    width: 4.w,
+                  ),
+                ),
+                child: Icon(
+                  Icons.check,
+                  size: 60.sp,
+                  color: Colors.grey[400],
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                'Booking canceled.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              // Confirm button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close dialog
+                    // Switch to Canceled tab
+                    setState(() {
+                      _selectedToggle = 1; // Switch to "Canceled" tab (index 1)
+                    });
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: _teal, width: 2),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Confirm',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _teal,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -355,23 +524,37 @@ class _BookingsPageState extends State<BookingsPage> {
                           TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                     ),
                     SizedBox(height: 8.h),
-                    Text(
-                      'more...', // As in Figma
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: _teal,
-                        fontWeight: FontWeight.w500,
+                  // CANCEL button at bottom right
+                  if (booking.status == 'Completed')
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        // TODO: Add cancel booking logic
+                        _showCancelDialog(context, booking);
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 8.h),
+                        child: Text(
+                          'CANCEL',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: _teal,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // --- Bottom Navigation Bar ---
   Widget _buildBottomNavBar() {
