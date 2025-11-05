@@ -55,10 +55,6 @@ class HomePage extends StatelessWidget {
               print('Bookings tapped');
               break;
             case 2:
-              // TODO: Navigate to Referral
-              print('Referral tapped');
-              break;
-            case 3:
               // Navigate to Profile
               Navigator.pushReplacementNamed(context, '/profile');
               break;
@@ -74,11 +70,6 @@ class HomePage extends StatelessWidget {
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Bookings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_giftcard_outlined),
-            activeIcon: Icon(Icons.card_giftcard),
-            label: 'Referral',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

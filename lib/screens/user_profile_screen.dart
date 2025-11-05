@@ -42,10 +42,6 @@ onTap: (index) {
       print('Bookings tapped');
       break;
     case 2:
-      // TODO: Navigate to Referral
-      print('Referral tapped');
-      break;
-    case 3:
       // We are already on the Profile page, do nothing.
       break;
   }
@@ -60,11 +56,6 @@ onTap: (index) {
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Bookings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_giftcard_outlined),
-            activeIcon: Icon(Icons.card_giftcard),
-            label: 'Referral',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
