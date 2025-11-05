@@ -27,7 +27,7 @@ class UserProfileScreen extends StatelessWidget {
       // REPLACED CustomBottomBar with standard BottomNavigationBar
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed, // To see all labels
-        currentIndex: 3, // 'Profile' is the 4th item (index 3)
+        currentIndex: 2, // 'Profile' is the 4th item (index 3)
         selectedItemColor: Colors.teal[600],
         unselectedItemColor: Colors.black87,
         // In user_profile_screen.dart, inside the BottomNavigationBar
@@ -76,7 +76,7 @@ onTap: (index) {
         left: 30.w, // Use .w for horizontal spacing
       ),
       // REPLACED appTheme.blue_gray_900
-      color: Colors.blueGrey[900],
+      color: Colors.teal[600],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
