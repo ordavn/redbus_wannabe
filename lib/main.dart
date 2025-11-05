@@ -14,12 +14,17 @@ import 'screens/offers_page.dart';
 import 'screens/bookings_page.dart';
 import 'screens/personal_information_page.dart';
 
+// Ticketing pages
+import 'screens/bus_list_page.dart';
+import 'screens/seat_selection_page.dart';
+import 'screens/payment_page.dart';
+import 'screens/booking_complete_page.dart';
+import 'screens/booking_failed_page.dart';
+
 Future<void> main() async {
   // Pastikan Flutter dan Firebase sudah siap sebelum app berjalan
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -41,8 +46,9 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(primarySwatch: Colors.orange),
 
           // Cek apakah user sudah login atau belum, lalu arahkan
-          initialRoute:
-              FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
+          initialRoute: FirebaseAuth.instance.currentUser == null
+              ? '/login'
+              : '/home',
 
           routes: {
             '/register': (context) => const RegisterPage(),
@@ -53,6 +59,11 @@ class MyApp extends StatelessWidget {
             '/offers': (context) => const OffersScreen(),
             '/bookings': (context) => const BookingsPage(),
             '/personal-info': (context) => const PersonalInformationPage(),
+            '/busList': (context) => const BusListPage(),
+            '/seatSelection': (context) => const SeatSelectionPage(),
+            '/payment': (context) => const PaymentPage(),
+            '/bookingComplete': (context) => const BookingCompletePage(),
+            '/bookingFailed': (context) => const BookingFailedPage(),
           },
         );
       },

@@ -29,15 +29,18 @@ class _HomePageState extends State<HomePage> {
   // Helper dates
   final DateTime _today = DateTime.now();
   final DateTime _tomorrow = DateTime.now().add(const Duration(days: 1));
-  final DateTime _dayAfterTomorrow = DateTime.now().add(const Duration(days: 2));
+  final DateTime _dayAfterTomorrow = DateTime.now().add(
+    const Duration(days: 2),
+  );
 
   // Custom Colors from the design
   static const Color _darkGreen = Color(0xFF345D56);
   static const Color _lightGray = Color(0xFFF2F2F2);
   static const Color _darkerGray = Color(0xFFE0E0E0);
   static const Color _teal = Color(0xFF00897B); // Button color
-  static const Color _headerFieldColor =
-      Color(0xFF4A7C75); // Color for From/To fields in header
+  static const Color _headerFieldColor = Color(
+    0xFF4A7C75,
+  ); // Color for From/To fields in header
 
   @override
   void dispose() {
@@ -186,7 +189,10 @@ class _HomePageState extends State<HomePage> {
     return TextField(
       controller: controller,
       style: TextStyle(
-          color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w500),
+        color: Colors.white,
+        fontSize: 16.sp,
+        fontWeight: FontWeight.w500,
+      ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white70, fontSize: 16.sp),
@@ -218,12 +224,7 @@ class _HomePageState extends State<HomePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildDateChip(
-              context,
-              label: "Today",
-              date: _today,
-              index: 0,
-            ),
+            _buildDateChip(context, label: "Today", date: _today, index: 0),
             _buildDateChip(
               context,
               label: "Tomorrow",
@@ -294,7 +295,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-// --- Calendar Bottom Sheet ---
+  // --- Calendar Bottom Sheet ---
   void _showCalendarSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -316,7 +317,9 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         "Select Date",
                         style: TextStyle(
-                            fontSize: 18.sp, fontWeight: FontWeight.bold),
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         icon: Icon(Icons.close, size: 24.sp),
@@ -330,7 +333,8 @@ class _HomePageState extends State<HomePage> {
                     lastDay: DateTime.now().add(const Duration(days: 365)),
                     focusedDay: _selectedDate,
                     currentDay: DateTime.now(),
-                    selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
+                    selectedDayPredicate: (day) =>
+                        isSameDay(_selectedDate, day),
                     onDaySelected: (selectedDay, focusedDay) {
                       // This function now *only* updates the state
                       setModalState(() {
@@ -350,7 +354,9 @@ class _HomePageState extends State<HomePage> {
                       titleCentered: true,
                       formatButtonVisible: false,
                       titleTextStyle: TextStyle(
-                          fontSize: 16.sp, fontWeight: FontWeight.w600),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     calendarStyle: CalendarStyle(
                       todayDecoration: BoxDecoration(
@@ -377,7 +383,8 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       margin: EdgeInsets.symmetric(
-          vertical: 20.h), // No horizontal margin needed
+        vertical: 20.h,
+      ), // No horizontal margin needed
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(4.r), // SHARPER
@@ -427,8 +434,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   // FIX: Added animation/feedback
-  Widget _buildCounterButton(
-      {required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildCounterButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
     // Use Material and InkWell to get splash/hover animations
     return Material(
       color: _lightGray,
@@ -453,12 +462,7 @@ class _HomePageState extends State<HomePage> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Handle search action
-          print("Searching busses...");
-          print("From: ${_fromController.text}");
-          print("To: ${_toController.text}");
-          print("Date: ${DateFormat.yMd().format(_selectedDate)}");
-          print("Passengers: $_personCount");
+          Navigator.pushNamed(context, '/busList');
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: _teal,
@@ -470,9 +474,10 @@ class _HomePageState extends State<HomePage> {
         child: Text(
           "Search busses",
           style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white),
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );
@@ -498,9 +503,10 @@ class _HomePageState extends State<HomePage> {
                 child: Text(
                   "View all",
                   style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: _teal),
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                    color: _teal,
+                  ),
                 ),
               ),
             ],
