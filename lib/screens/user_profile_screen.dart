@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class UserProfileScreen extends StatelessWidget {
   UserProfileScreen({Key? key}) : super(key: key);
+
+  String _getFallbackDisplayName(User? user) {
+    if (user == null) return "User";
+    String displayName = user.displayName ?? user.email ?? "User";
+    if (user.email != null && displayName == user.email) {
+      displayName = user.email!.split('@').first;
+      displayName =
+          "${displayName[0].toUpperCase()}${displayName.substring(1)}";
+    }
+    return displayName;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +25,6 @@ class UserProfileScreen extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              // Added for scrollability on small screens
               child: Column(
                 children: [
                   _buildProfileHeader(context),
@@ -26,25 +38,22 @@ class UserProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      // REPLACED CustomBottomBar with standard BottomNavigationBar
+      // --- (Bottom Nav Bar Anda tidak berubah, sudah benar) ---
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // To see all labels
-        currentIndex: 2, // 'Profile' is the 3rd item (index 2)
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 2,
         selectedItemColor: Colors.teal[600],
         unselectedItemColor: Colors.black87,
-        // In user_profile_screen.dart, inside the BottomNavigationBar
         onTap: (index) {
           switch (index) {
             case 0:
-              // Navigate to Home
               Navigator.pushReplacementNamed(context, '/home');
               break;
             case 1:
-              // Navigate to Bookings
               Navigator.pushReplacementNamed(context, '/bookings');
               break;
             case 2:
-              // We are already on the Profile page, do nothing.
+              // Do nothing
               break;
           }
         },
@@ -69,21 +78,21 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
+  // --- (Widget ini tidak berubah) ---
   Widget _buildProfileHeader(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: 60.h, // Adjusted for status bar
+        top: 60.h,
         bottom: 24.h,
-        left: 30.w, // Use .w for horizontal spacing
+        left: 30.w,
       ),
-      color: const Color(0xFF345D56), // Use the dark green color
+      color: const Color(0xFF345D56),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Your Profile',
-            // REPLACED TextStyleHelper
             style: TextStyle(
               fontSize: 24.sp,
               fontWeight: FontWeight.bold,
@@ -96,75 +105,92 @@ class UserProfileScreen extends StatelessWidget {
   }
 
   Widget _buildUserInfo(BuildContext context) {
-    // 1. Get the current user from Firebase
     final user = FirebaseAuth.instance.currentUser;
 
-    // 2. Prepare the display data with fallbacks
-    String displayName = user?.displayName ?? user?.email ?? "User";
-    if (user?.email != null && displayName == user!.email) {
-      // Create a name from the email if no display name exists
-      displayName = user.email!.split('@').first;
-      // Capitalize the first letter
-      displayName =
-          "${displayName[0].toUpperCase()}${displayName.substring(1)}";
+    // Jika user (karena alasan aneh) null, tampilkan UI kosong
+    if (user == null) {
+      return SizedBox.shrink();
     }
 
-    final String email = user?.email ?? 'No email provided';
-    final String? photoUrl = user?.photoURL;
+    // Gunakan FutureBuilder untuk mengambil data Firestore secara asinkron
+    // tanpa mengubah halaman ini menjadi StatefulWidget.
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      // Future: Ambil dokumen user dari Firestore
+      future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+      builder: (context, snapshot) {
+        String displayName;
+        String email = user.email ?? 'No email provided';
+        final String? photoUrl = user.photoURL; // Ambil foto dari Auth
 
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 30.w),
-      child: Row(
-        children: [
-          // 3. Update the profile picture
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20.r),
-            // Check if a photoUrl exists, otherwise use the placeholder
-            child: photoUrl != null
-                ? Image.network(
-                    photoUrl, // Load from the internet
-                    height: 40.h,
-                    width: 40.w,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Icon(Icons.person, size: 40.h), // Placeholder on error
-                  )
-                : Image.asset(
-                    'assets/images/imgEllipse2.png', // Local placeholder
-                    height: 40.h,
-                    width: 40.w,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Icon(Icons.person, size: 40.h), // Placeholder
-                  ),
-          ),
-          SizedBox(width: 14.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 4. Update the name
-                Text(
-                  displayName,
-                  style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData &&
+            snapshot.data!.exists) {
+          // --- SUKSES ---
+          // Jika data ada di Firestore, gunakan itu
+          final userData = snapshot.data!.data()!;
+          final String fullName = userData['full_name'] ?? '';
+          email = userData['email'] ?? email; // Ambil email dari Firestore
+          displayName =
+              fullName.isNotEmpty ? fullName : _getFallbackDisplayName(user);
+        } else {
+          // --- LOADING ATAU GAGAL ---
+          // Gunakan fallback (logika Anda sebelumnya)
+          displayName = _getFallbackDisplayName(user);
+        }
+
+        // --- Tampilkan UI Anda (tidak berubah) dengan data yang sudah diolah ---
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 30.w),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20.r),
+                child: photoUrl != null
+                    ? Image.network(
+                        photoUrl,
+                        height: 40.h,
+                        width: 40.w,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.person, size: 40.h),
+                      )
+                    : Image.asset(
+                        'assets/images/imgEllipse2.png',
+                        height: 40.h,
+                        width: 40.w,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.person, size: 40.h),
+                      ),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName, // <-- Ini sekarang dinamis (Firestore/Auth)
+                      style: TextStyle(
+                          fontSize: 20.sp, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      email, // <-- Ini sekarang dinamis (Firestore/Auth)
+                      style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                    ),
+                  ],
                 ),
-                // 5. Update the email
-                Text(
-                  email,
-                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
+  // --- (Widget-widget di bawah ini tidak berubah, sudah benar) ---
   Widget _buildDivider(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
-      // REPLACED with standard Divider
       child: const Divider(height: 1, color: Colors.grey),
     );
   }
@@ -185,9 +211,8 @@ class UserProfileScreen extends StatelessWidget {
           SizedBox(height: 18.h),
           _buildMenuRow(
             context,
-            icon: Icons.person_pin, // Using a standard icon
+            icon: Icons.person_pin,
             title: 'Personal information',
-            // 1. UPDATED ONTAP
             onTap: () {
               Navigator.pushNamed(context, '/personal-info');
             },
@@ -195,11 +220,9 @@ class UserProfileScreen extends StatelessWidget {
           const Divider(indent: 18, endIndent: 18),
           _buildMenuRow(
             context,
-            icon: Icons.book_online, // Using a standard icon
+            icon: Icons.book_online,
             title: 'Bookings',
-            // 2. UPDATED ONTAP
             onTap: () {
-              // Use pushReplacementNamed to match bottom nav behavior
               Navigator.pushReplacementNamed(context, '/bookings');
             },
           ),
@@ -225,7 +248,7 @@ class UserProfileScreen extends StatelessWidget {
           SizedBox(height: 18.h),
           _buildMenuRow(
             context,
-            icon: Icons.local_offer, // Using a standard icon
+            icon: Icons.local_offer,
             title: 'Offers',
             onTap: () {
               Navigator.pushNamed(context, '/offers');
@@ -234,7 +257,7 @@ class UserProfileScreen extends StatelessWidget {
           const Divider(indent: 18, endIndent: 18),
           _buildMenuRow(
             context,
-            icon: Icons.logout, // Using a standard icon
+            icon: Icons.logout,
             title: 'Log out',
             onTap: () => _showLogoutDialog(context),
           ),
@@ -244,7 +267,6 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  // REFACTORED _buildMenuRow to be more reusable
   Widget _buildMenuRow(BuildContext context,
       {required IconData icon,
       required String title,
@@ -262,7 +284,7 @@ class UserProfileScreen extends StatelessWidget {
               title,
               style: TextStyle(fontSize: 16.sp),
             ),
-            const Spacer(), // Pushes arrow to the end
+            const Spacer(),
             Icon(Icons.arrow_forward_ios, size: 16.sp, color: Colors.grey),
           ],
         ),
@@ -283,17 +305,11 @@ class UserProfileScreen extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              // Make the button async to await for logout
               onPressed: () async {
-                Navigator.of(context).pop(); // Close dialog first
-
-                // --- This is the new logic ---
+                Navigator.of(context).pop();
                 await FirebaseAuth.instance.signOut();
-
-                // Navigate to login screen and remove all other routes
                 Navigator.pushNamedAndRemoveUntil(
                     context, '/login', (route) => false);
-                // --- End of new logic ---
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal[600],

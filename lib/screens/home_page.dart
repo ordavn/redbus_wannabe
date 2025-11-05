@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // <-- 1. IMPORT FIRESTORE
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -12,8 +13,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Get the current user
+  // --- Firebase Instances ---
   final user = FirebaseAuth.instance.currentUser;
+  final _firestore = FirebaseFirestore.instance; // <-- Instance Firestore
+
+  // --- State untuk Data Firebase ---
+  String _fullName = ""; // <-- Untuk menyimpan nama pengguna dari Firestore
+  bool _isLoadingSearch = false; // <-- State loading untuk tombol search
 
   // Controllers for text fields
   final TextEditingController _fromController = TextEditingController();
@@ -42,6 +48,30 @@ class _HomePageState extends State<HomePage> {
     0xFF4A7C75,
   ); // Color for From/To fields in header
 
+  // --- LOGIC 1: Ambil Nama Pengguna saat Halaman Dimuat ---
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    if (user == null) return;
+    try {
+      final doc = await _firestore.collection('users').doc(user!.uid).get();
+      if (doc.exists && doc.data() != null) {
+        if (mounted) {
+          setState(() {
+            _fullName = doc.data()!['full_name'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
+      // Jika gagal, header akan menampilkan email (fallback)
+    }
+  }
+
   @override
   void dispose() {
     _fromController.dispose();
@@ -56,7 +86,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: _lightGray, // Main background color for the body
       body: CustomScrollView(
         slivers: [
-          _buildHeader(), // The new header, contains From/To fields
+          _buildHeader(), // <-- Header ini sekarang dinamis
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -66,8 +96,8 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: 20.h), // Spacing from header
                   _buildAvailableDates(context),
                   _buildPassengerCounter(),
-                  _buildSearchButton(),
-                  _buildOffersSection(),
+                  _buildSearchButton(), // <-- Tombol ini sekarang punya logic
+                  _buildOffersSection(), // <-- Section ini sekarang dinamis
                   SizedBox(height: 20.h),
                 ],
               ),
@@ -81,26 +111,30 @@ class _HomePageState extends State<HomePage> {
 
   // --- Header Widget ---
   Widget _buildHeader() {
-    String displayName = user?.displayName ?? user?.email ?? "User";
-    if (user?.email != null && displayName == user!.email) {
-      displayName = user!.email!.split('@').first;
+    // --- LOGIC 1 (Lanjutan): Tampilkan nama ---
+    String displayName;
+    if (_fullName.isNotEmpty) {
+      displayName = _fullName;
+    } else {
+      displayName = user?.displayName ?? user?.email ?? "User";
+      if (user?.email != null && displayName == user!.email) {
+        displayName = user!.email!.split('@').first;
+      }
     }
     // Capitalize first letter
     displayName = "${displayName[0].toUpperCase()}${displayName.substring(1)}";
+    // --- AKHIR DARI LOGIC 1 ---
 
     return SliverAppBar(
       backgroundColor: _darkGreen,
-      // FIX 2: Reduced height to shrink the gap
       expandedHeight: 180.h,
       pinned: true,
       elevation: 0,
       automaticallyImplyLeading: false,
-
-      // FIX 1: Add top padding to the title
       title: Padding(
         padding: EdgeInsets.only(top: 8.h),
         child: Text(
-          "Hi $displayName,",
+          "Hi $displayName,", // <-- UI Anda, sekarang dengan data dinamis
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
@@ -109,23 +143,21 @@ class _HomePageState extends State<HomePage> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-
-      // FIX 1: Add top padding to the avatar
       actions: [
         Padding(
           padding: EdgeInsets.only(right: 16.w, top: 8.h),
           child: _buildProfileAvatar(),
         ),
       ],
-
       flexibleSpace: FlexibleSpaceBar(
         background: _buildExpandedHeaderBackground(),
-        collapseMode: CollapseMode.parallax, // Fades out
+        collapseMode: CollapseMode.parallax,
       ),
     );
   }
 
-  // Expanded header (The 'background' for FlexibleSpaceBar)
+  // ... (Widget _buildExpandedHeaderBackground, _buildProfileAvatar, _buildLocationField TIDAK BERUBAH) ...
+  // ... (Ini adalah widget UI murni Anda, jadi kita tidak sentuh) ...
   Widget _buildExpandedHeaderBackground() {
     return SafeArea(
       child: Padding(
@@ -211,7 +243,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- Available Dates Widget ---
+  // ... (Widget _buildAvailableDates, _buildDateChip, _showCalendarSheet TIDAK BERUBAH) ...
+  // ... (Ini adalah widget UI murni Anda dengan state lokal, jadi kita tidak sentuh) ...
   Widget _buildAvailableDates(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +328,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- Calendar Bottom Sheet ---
   void _showCalendarSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -336,19 +368,13 @@ class _HomePageState extends State<HomePage> {
                     selectedDayPredicate: (day) =>
                         isSameDay(_selectedDate, day),
                     onDaySelected: (selectedDay, focusedDay) {
-                      // This function now *only* updates the state
                       setModalState(() {
                         _selectedDate = selectedDay;
                       });
-                      // Update the main page state as well
                       setState(() {
                         _selectedDateIndex = 3; // "Other"
                         _selectedDate = selectedDay;
                       });
-
-                      // --- THIS LINE IS NOW REMOVED ---
-                      // Navigator.of(context).pop();
-                      // ---
                     },
                     headerStyle: HeaderStyle(
                       titleCentered: true,
@@ -378,7 +404,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- Passenger Counter Widget ---
+  // ... (Widget _buildPassengerCounter, _buildCounterButton TIDAK BERUBAH) ...
+  // ... (Ini adalah widget UI murni Anda dengan state lokal, jadi kita tidak sentuh) ...
   Widget _buildPassengerCounter() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -433,7 +460,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // FIX: Added animation/feedback
   Widget _buildCounterButton({
     required IconData icon,
     required VoidCallback onPressed,
@@ -456,14 +482,42 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // --- LOGIC 2: Fungsi Baru untuk Tombol Search ---
+  void _searchBuses() {
+    // 1. Validasi input
+    if (_fromController.text.trim().isEmpty ||
+        _toController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Origin and Destination must be filled!"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // 2. Kumpulkan semua parameter pencarian
+    final searchParams = {
+      'from': _fromController.text.trim(),
+      'to': _toController.text.trim(),
+      'date': _selectedDate,
+      'passengers': _personCount,
+    };
+
+    // 3. Navigasi ke halaman /busList dan kirim 'searchParams'
+    // Halaman /busList nanti akan menerima data ini dan melakukan query
+    Navigator.pushNamed(context, '/busList', arguments: searchParams);
+  }
+  // --- AKHIR DARI LOGIC 2 ---
+
   // --- Search Button Widget ---
   Widget _buildSearchButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/busList');
-        },
+        // --- LOGIC 2 (Lanjutan): Hubungkan tombol ke fungsi baru ---
+        onPressed: _isLoadingSearch ? null : _searchBuses,
+        // ---
         style: ElevatedButton.styleFrom(
           backgroundColor: _teal,
           padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -471,14 +525,16 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(4.r), // SHARPER
           ),
         ),
-        child: Text(
-          "Search busses",
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        child: _isLoadingSearch
+            ? const CircularProgressIndicator(color: Colors.white)
+            : Text(
+                "Search busses",
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
@@ -512,23 +568,70 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           SizedBox(height: 12.h),
+
+          // --- LOGIC 3: Ganti ListView statis dengan StreamBuilder ---
           SizedBox(
             height: 120.h,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildOfferCard(),
-                SizedBox(width: 12.w),
-                _buildOfferCard(),
-              ],
+            child: StreamBuilder<QuerySnapshot>(
+              // Query: Ambil 5 promo teratas yang masih berlaku
+              stream: _firestore
+                  .collection('offers')
+                  .where('valid_until', isGreaterThanOrEqualTo: Timestamp.now())
+                  .limit(5)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                // Saat loading
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                // Jika error
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Failed to load offers."));
+                }
+                // Jika tidak ada data
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("No offers available."));
+                }
+
+                // Jika ada data, tampilkan ListView
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final offerDoc = snapshot.data!.docs[index];
+                    // Ubah data Dokumen Firestore menjadi Map
+                    final offerData = offerDoc.data() as Map<String, dynamic>;
+
+                    // Beri jarak antar card
+                    return Padding(
+                      padding: EdgeInsets.only(right: 12.w),
+                      // Panggil widget _buildOfferCard Anda DENGAN data
+                      child: _buildOfferCard(offerData),
+                    );
+                  },
+                );
+              },
             ),
           ),
+          // --- AKHIR DARI LOGIC 3 ---
         ],
       ),
     );
   }
 
-  Widget _buildOfferCard() {
+  // --- LOGIC 3 (Lanjutan): Modifikasi widget Anda untuk menerima data ---
+  // Perhatikan perubahan signature: (Map<String, dynamic> offerData)
+  Widget _buildOfferCard(Map<String, dynamic> offerData) {
+    // Ambil data dari Map, berikan nilai default jika null
+    String title = offerData['title'] ?? "Promo Spesial";
+    String promoCode = offerData['promo_code'] ?? "PROMO";
+
+    // Format tanggal
+    Timestamp validUntilStamp = offerData['valid_until'] ?? Timestamp.now();
+    String validUntil = DateFormat('d MMM').format(validUntilStamp.toDate());
+    // ---
+
+    // Ini adalah UI Anda, tidak saya ubah, hanya saya isi dengan data
     return Container(
       width: 250.w,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -540,16 +643,18 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Save up to 60% on ALL tickets",
+            title, // <-- Data dinamis
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
+            maxLines: 2, // Tambahan kecil agar teks tidak overflow
+            overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 8.h),
           Text(
-            "Valid till: 26 Oct",
+            "Valid till: $validUntil", // <-- Data dinamis
             style: TextStyle(fontSize: 12.sp, color: Colors.grey[300]),
           ),
           const Spacer(),
@@ -560,7 +665,7 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(20.r),
             ),
             child: Text(
-              "LOVEОСТВ",
+              promoCode, // <-- Data dinamis
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
@@ -573,6 +678,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+  // --- AKHIR DARI LOGIC 3 ---
 
   // --- Bottom Navigation Bar ---
   Widget _buildBottomNavBar() {

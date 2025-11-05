@@ -10,9 +10,13 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _usernameController = TextEditingController();
+  // --- Controller untuk semua field dari ER Diagram ---
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
+  final _dobController = TextEditingController(); // Untuk Date of Birth
+
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
@@ -30,13 +34,17 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text.trim(),
       );
 
-      // 2. Simpan data tambahan (username) ke Firestore
+      // --- 2. Simpan SEMUA data dari ER Diagram ke Firestore ---
+      // Kita gunakan uid dari Auth sebagai ID Dokumen
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'username': _usernameController.text.trim(),
+        'full_name': _fullNameController.text.trim(),
         'email': _emailController.text.trim(),
+        'phone_number': _phoneNumberController.text.trim(),
+        'date_of_birth': _dobController.text.trim(), // Format 'YYYY-MM-DD'
         'createdAt': Timestamp.now(),
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Registrasi berhasil! Silakan login."),
@@ -44,8 +52,8 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
       Navigator.pushReplacementNamed(context, '/login');
-
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Registrasi gagal: ${e.message}"),
@@ -63,15 +71,16 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _phoneNumberController.dispose();
+    _dobController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // UI dari kodemu, dengan modifikasi
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
@@ -94,15 +103,16 @@ class _RegisterPageState extends State<RegisterPage> {
                 const Text("Let's get you connected."),
                 const SizedBox(height: 30),
                 TextField(
-                  controller: _usernameController,
+                  controller: _fullNameController,
                   decoration: InputDecoration(
-                    labelText: "Username",
+                    labelText: "Full Name",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
                 const SizedBox(height: 15),
                 TextField(
                   controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: "Email",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -117,10 +127,29 @@ class _RegisterPageState extends State<RegisterPage> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: _phoneNumberController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: "Phone Number",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: _dobController,
+                  keyboardType: TextInputType.datetime,
+                  decoration: InputDecoration(
+                    labelText: "Date of Birth (YYYY-MM-DD)",
+                    hintText: "YYYY-MM-DD",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
                 const SizedBox(height: 25),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF199675),
+                    backgroundColor: const Color(0xFF199675), // Sesuaikan warna Anda
                     foregroundColor: Colors.white,
                     minimumSize: Size(double.infinity, isSmallScreen ? 45 : 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -130,20 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Register"),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Already have an account? "),
-                    GestureDetector(
-                      onTap: () => Navigator.pushReplacementNamed(context, '/login'),
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    )
-                  ],
-                ),
+                // ... (sisa UI Anda)
               ],
             ),
           ),
