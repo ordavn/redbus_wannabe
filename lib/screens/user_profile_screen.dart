@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // <-- 1. ADD THIS IMPORT
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserProfileScreen extends StatelessWidget {
   UserProfileScreen({Key? key}) : super(key: key);
@@ -16,7 +16,7 @@ class UserProfileScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildProfileHeader(context),
-                  _buildUserInfo(context), // <-- 2. THIS IS NOW UPDATED
+                  _buildUserInfo(context),
                   _buildDivider(context),
                   _buildMyDetailsSection(context),
                   _buildMoreSection(context),
@@ -77,7 +77,7 @@ class UserProfileScreen extends StatelessWidget {
         bottom: 24.h,
         left: 30.w, // Use .w for horizontal spacing
       ),
-      color: Color(0xFF345D56),
+      color: const Color(0xFF345D56), // Use the dark green color
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -95,7 +95,6 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- 2. UPDATED _buildUserInfo METHOD ---
   Widget _buildUserInfo(BuildContext context) {
     // 1. Get the current user from Firebase
     final user = FirebaseAuth.instance.currentUser;
@@ -188,14 +187,21 @@ class UserProfileScreen extends StatelessWidget {
             context,
             icon: Icons.person_pin, // Using a standard icon
             title: 'Personal information',
-            onTap: () => print('Personal information tapped'),
+            // 1. UPDATED ONTAP
+            onTap: () {
+              Navigator.pushNamed(context, '/personal-info');
+            },
           ),
           const Divider(indent: 18, endIndent: 18),
           _buildMenuRow(
             context,
             icon: Icons.book_online, // Using a standard icon
             title: 'Bookings',
-            onTap: () => print('Bookings tapped'),
+            // 2. UPDATED ONTAP
+            onTap: () {
+              // Use pushReplacementNamed to match bottom nav behavior
+              Navigator.pushReplacementNamed(context, '/bookings');
+            },
           ),
           const Divider(indent: 18, endIndent: 18),
         ],
@@ -222,7 +228,7 @@ class UserProfileScreen extends StatelessWidget {
             icon: Icons.local_offer, // Using a standard icon
             title: 'Offers',
             onTap: () {
-                Navigator.pushNamed(context, '/offers');
+              Navigator.pushNamed(context, '/offers');
             },
           ),
           const Divider(indent: 18, endIndent: 18),
@@ -230,7 +236,7 @@ class UserProfileScreen extends StatelessWidget {
             context,
             icon: Icons.logout, // Using a standard icon
             title: 'Log out',
-            onTap: () => _showLogoutDialog(context), // <-- 3. THIS IS UPDATED
+            onTap: () => _showLogoutDialog(context),
           ),
           const Divider(indent: 18, endIndent: 18),
         ],
@@ -264,7 +270,6 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- 3. UPDATED _showLogoutDialog METHOD ---
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
