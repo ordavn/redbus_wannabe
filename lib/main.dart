@@ -9,8 +9,9 @@ import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/forget_password_page.dart';
 import 'screens/home_page.dart';
-import 'screens/user_profile_screen.dart'; // <-- 1. Make sure this import is here
+import 'screens/user_profile_screen.dart';
 import 'screens/offers_page.dart';
+import 'screens/bookings_page.dart'; // <-- 1. ADD THIS IMPORT
 
 Future<void> main() async {
   // Pastikan Flutter dan Firebase sudah siap sebelum app berjalan
@@ -39,16 +40,17 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(primarySwatch: Colors.orange),
 
           // Cek apakah user sudah login atau belum, lalu arahkan
-          initialRoute: FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
+          initialRoute:
+              FirebaseAuth.instance.currentUser == null ? '/login' : '/home',
 
           routes: {
             '/register': (context) => const RegisterPage(),
             '/login': (context) => const LoginPage(),
             '/forget': (context) => const ForgetPasswordPage(),
             '/home': (context) => const HomePage(),
-            '/profile': (context) => UserProfileScreen(), // <-- 3. Add this line for the profile route
-            '/offers': (context) => OffersScreen(), 
-
+            '/profile': (context) => UserProfileScreen(),
+            '/offers': (context) => const OffersScreen(), // Added const
+            '/bookings': (context) => const BookingsPage(), // <-- 2. ADD THIS ROUTE
           },
         );
       },
