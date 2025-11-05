@@ -10,6 +10,7 @@ import 'screens/register_page.dart';
 import 'screens/forget_password_page.dart';
 import 'screens/home_page.dart';
 import 'screens/user_profile_screen.dart'; // <-- 1. Make sure this import is here
+import 'screens/offers_page.dart';
 
 Future<void> main() async {
   // Pastikan Flutter dan Firebase sudah siap sebelum app berjalan
@@ -46,6 +47,8 @@ class MyApp extends StatelessWidget {
             '/forget': (context) => const ForgetPasswordPage(),
             '/home': (context) => const HomePage(),
             '/profile': (context) => UserProfileScreen(), // <-- 3. Add this line for the profile route
+            '/offers': (context) => OffersScreen(), 
+
           },
         );
       },
