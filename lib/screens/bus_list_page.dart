@@ -83,10 +83,11 @@ class BusListPage extends StatelessWidget {
             onTap: () {
               Navigator.pushNamed(
                 context,
-                '/seatSelection',
-                arguments: bus, // send bus data to seat page
+                '/busDetail',
+                arguments: bus, // kirim data bus ke halaman detail
               );
             },
+
             child: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),

@@ -16,6 +16,7 @@ import 'screens/personal_information_page.dart';
 
 // Ticketing pages
 import 'screens/bus_list_page.dart';
+import 'screens/bus_detail_page.dart';
 import 'screens/seat_selection_page.dart';
 import 'screens/payment_page.dart';
 import 'screens/booking_complete_page.dart';
@@ -60,6 +61,7 @@ class MyApp extends StatelessWidget {
             '/bookings': (context) => const BookingsPage(),
             '/personal-info': (context) => const PersonalInformationPage(),
             '/busList': (context) => const BusListPage(),
+            '/busDetail': (context) => const BusDetailPage(),
             '/seatSelection': (context) => const SeatSelectionPage(),
             '/payment': (context) => const PaymentPage(),
             '/bookingComplete': (context) => const BookingCompletePage(),
