@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-// Using similar structure and colors from home_page.dart
+/// A widget that displays a single offer card (for example, a discount or coupon)
+/// This widget is used inside the Offers List to represent each offer visually.
 class OfferCardWidget extends StatelessWidget {
+  // Each offer is represented as a Map (key-value pairs)
   final Map<String, dynamic> offer;
 
   const OfferCardWidget({
@@ -14,11 +16,13 @@ class OfferCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      // Outer margin for spacing between cards
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Color(offer['backgroundColor'] as int),
-        borderRadius: BorderRadius.circular(16),
+        color: Color(offer['backgroundColor'] as int), // Dynamic background color
+        borderRadius: BorderRadius.circular(16), // Rounded corners
         boxShadow: [
+          // Adds a shadow below the card
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
@@ -26,22 +30,24 @@ class OfferCardWidget extends StatelessWidget {
           ),
         ],
       ),
+      // Padding inside the card
       child: Padding(
         padding: EdgeInsets.all(16.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildOfferHeader(),
+            _buildOfferHeader(), // Title and icon
             SizedBox(height: 16.h),
-            _buildOfferContent(),
+            _buildOfferContent(), // Description and validity
             SizedBox(height: 24.h),
-            _buildCouponSection(context),
+            _buildCouponSection(context), // Coupon code + copy button
           ],
         ),
       ),
     );
   }
 
+  /// Builds the top part of the offer card (title + icon)
   Widget _buildOfferHeader() {
     return Row(
       children: [
@@ -59,7 +65,7 @@ class OfferCardWidget extends StatelessWidget {
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
             ),
-            overflow: TextOverflow.ellipsis,
+            overflow: TextOverflow.ellipsis, // Avoids overflow
             maxLines: 1,
           ),
         ),
@@ -67,6 +73,7 @@ class OfferCardWidget extends StatelessWidget {
     );
   }
 
+  /// Builds the main content of the card — description and validity date
   Widget _buildOfferContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,6 +112,7 @@ class OfferCardWidget extends StatelessWidget {
     );
   }
 
+  /// Builds the section showing the coupon code and copy functionality
   Widget _buildCouponSection(BuildContext context) {
     return Row(
       children: [
@@ -118,8 +126,9 @@ class OfferCardWidget extends StatelessWidget {
             ),
           ),
         ),
+        // The coupon box with a copy icon
         GestureDetector(
-          onTap: () => _copyCouponCode(context),
+          onTap: () => _copyCouponCode(context), // When tapped, copy coupon
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
             decoration: BoxDecoration(
@@ -159,9 +168,11 @@ class OfferCardWidget extends StatelessWidget {
     );
   }
 
+  /// Function to copy the coupon code to clipboard
   void _copyCouponCode(BuildContext context) {
     Clipboard.setData(ClipboardData(text: offer['couponCode'] as String));
     
+    // Shows confirmation using a SnackBar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -182,6 +193,8 @@ class OfferCardWidget extends StatelessWidget {
   }
 }
 
+/// This widget displays a list of offers using ListView.
+/// It also supports pull-to-refresh functionality.
 class OffersListWidget extends StatelessWidget {
   final List<Map<String, dynamic>> offers;
   final VoidCallback? onRefresh;
@@ -194,10 +207,12 @@ class OffersListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If there are no offers, show an empty state message
     if (offers.isEmpty) {
       return _buildEmptyState();
     }
 
+    // Otherwise, display the list of offers
     return RefreshIndicator(
       onRefresh: () async {
         if (onRefresh != null) {
@@ -205,12 +220,12 @@ class OffersListWidget extends StatelessWidget {
         }
         await Future.delayed(const Duration(milliseconds: 500));
       },
-      color: const Color(0xFF16A085), // Using teal color from home_page
+      color: const Color(0xFF16A085), // Teal color for refresh indicator
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(
           top: 16.h,
-          bottom: 80.h, // Extra padding for bottom navigation
+          bottom: 80.h, // Leave space for bottom navigation bar
         ),
         itemCount: offers.length,
         itemBuilder: (context, index) {
@@ -222,6 +237,7 @@ class OffersListWidget extends StatelessWidget {
     );
   }
 
+  /// Builds the "no offers available" UI
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -257,7 +273,7 @@ class OffersListWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: onRefresh,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16A085), // Teal from home_page
+                backgroundColor: const Color(0xFF16A085),
                 padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
               ),
               child: Text(
@@ -276,6 +292,8 @@ class OffersListWidget extends StatelessWidget {
   }
 }
 
+/// The main OffersScreen — this is a full page that shows all offers.
+/// It includes AppBar, body (offers list), and bottom navigation bar.
 class OffersScreen extends StatefulWidget {
   const OffersScreen({super.key});
 
@@ -284,11 +302,11 @@ class OffersScreen extends StatefulWidget {
 }
 
 class _OffersScreenState extends State<OffersScreen> {
-  int _currentBottomNavIndex = 0;
-  List<Map<String, dynamic>> _offers = [];
-  bool _isLoading = true;
+  int _currentBottomNavIndex = 0; // Track which bottom tab is active
+  List<Map<String, dynamic>> _offers = []; // Holds the list of offers
+  bool _isLoading = true; // Show loading spinner initially
 
-  // Colors from home_page.dart for consistency
+  // Common colors used across this screen
   static const Color _darkGreen = Color(0xFF2F5233);
   static const Color _teal = Color(0xFF16A085);
   static const Color _lightGray = Color(0xFFF2F2F2);
@@ -296,15 +314,16 @@ class _OffersScreenState extends State<OffersScreen> {
   @override
   void initState() {
     super.initState();
-    _loadOffers();
+    _loadOffers(); // Load data when the screen is opened
   }
 
+  /// Simulates loading offer data (can be replaced with API call)
   void _loadOffers() {
     setState(() {
       _isLoading = true;
     });
 
-    // Mock data for promotional offers - using same structure as home_page
+    // Example data for demonstration
     _offers = [
       {
         "id": 1,
@@ -312,7 +331,7 @@ class _OffersScreenState extends State<OffersScreen> {
         "description": "Save up to 60% on ALL tickets",
         "validTill": "26 Oct",
         "couponCode": "LOVEOCTB",
-        "backgroundColor": 0xFF4A7C59, // Medium green
+        "backgroundColor": 0xFF4A7C59,
       },
       {
         "id": 2,
@@ -320,7 +339,7 @@ class _OffersScreenState extends State<OffersScreen> {
         "description": "Save up to 45% on weekend bookings",
         "validTill": "28 Oct",
         "couponCode": "WEEKEND45",
-        "backgroundColor": 0xFF16A085, // Bright teal
+        "backgroundColor": 0xFF16A085,
       },
       {
         "id": 3,
@@ -328,7 +347,7 @@ class _OffersScreenState extends State<OffersScreen> {
         "description": "Save up to 70% on selected events",
         "validTill": "25 Oct",
         "couponCode": "FLASH70",
-        "backgroundColor": 0xFF2F5233, // Dark green
+        "backgroundColor": 0xFF2F5233,
       },
       {
         "id": 4,
@@ -336,7 +355,7 @@ class _OffersScreenState extends State<OffersScreen> {
         "description": "Save up to 50% on advance bookings",
         "validTill": "30 Oct",
         "couponCode": "EARLY50",
-        "backgroundColor": 0xFF0F4C75, // Deep blue-green
+        "backgroundColor": 0xFF0F4C75,
       },
       {
         "id": 5,
@@ -344,7 +363,7 @@ class _OffersScreenState extends State<OffersScreen> {
         "description": "Save up to 40% with student ID",
         "validTill": "31 Oct",
         "couponCode": "STUDENT40",
-        "backgroundColor": 0xFF4A7C59, // Medium green
+        "backgroundColor": 0xFF4A7C59,
       },
       {
         "id": 6,
@@ -352,36 +371,35 @@ class _OffersScreenState extends State<OffersScreen> {
         "description": "Save up to 55% on group tickets",
         "validTill": "29 Oct",
         "couponCode": "GROUP55",
-        "backgroundColor": 0xFF16A085, // Bright teal
+        "backgroundColor": 0xFF16A085,
       },
     ];
 
+    // Stop loading animation after data is ready
     setState(() {
       _isLoading = false;
     });
   }
 
+  /// Handles bottom navigation bar item taps
   void _onBottomNavTap(int index) {
     setState(() {
       _currentBottomNavIndex = index;
     });
 
-    // Handle navigation based on index - similar to home_page
     switch (index) {
       case 0:
-        // Already on offers screen - do nothing
         break;
       case 1:
-        // Navigate to bookings (placeholder)
         _showComingSoonDialog('Bookings');
         break;
       case 2:
-        // Navigate to profile
         Navigator.pushReplacementNamed(context, '/profile');
         break;
     }
   }
 
+  /// Shows a dialog for features not yet available
   void _showComingSoonDialog(String feature) {
     showDialog(
       context: context,
@@ -406,7 +424,7 @@ class _OffersScreenState extends State<OffersScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
                 setState(() {
-                  _currentBottomNavIndex = 0; // Reset to home tab
+                  _currentBottomNavIndex = 0;
                 });
               },
               child: Text(
@@ -424,6 +442,7 @@ class _OffersScreenState extends State<OffersScreen> {
     );
   }
 
+  /// Reloads the offer list when user pulls to refresh
   void _refreshOffers() {
     _loadOffers();
   }
@@ -431,7 +450,7 @@ class _OffersScreenState extends State<OffersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _lightGray, // Same as home_page
+      backgroundColor: _lightGray,
       appBar: AppBar(
         title: Text(
           'Offers',
@@ -441,7 +460,7 @@ class _OffersScreenState extends State<OffersScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: _darkGreen, // Same dark green as home_page header
+        backgroundColor: _darkGreen,
         foregroundColor: Colors.white,
         centerTitle: true,
         elevation: 0,
@@ -451,13 +470,14 @@ class _OffersScreenState extends State<OffersScreen> {
     );
   }
 
+  /// Shows a loading spinner while fetching data
   Widget _buildLoadingState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: _teal, // Using teal color
+            color: _teal,
           ),
           SizedBox(height: 16.h),
           Text(
@@ -473,6 +493,7 @@ class _OffersScreenState extends State<OffersScreen> {
     );
   }
 
+  /// The main body that displays the list of offers
   Widget _buildBody() {
     return SafeArea(
       child: OffersListWidget(
@@ -482,13 +503,14 @@ class _OffersScreenState extends State<OffersScreen> {
     );
   }
 
+  /// The bottom navigation bar for switching between sections
   Widget _buildBottomNavigationBar() {
     return BottomNavigationBar(
       currentIndex: _currentBottomNavIndex,
       onTap: _onBottomNavTap,
       type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,
-      selectedItemColor: _teal, // Same teal as home_page
+      selectedItemColor: _teal,
       unselectedItemColor: Colors.grey[600],
       elevation: 4.0,
       selectedFontSize: 12.sp,
