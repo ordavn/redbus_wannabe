@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class UserProfileScreen extends StatelessWidget {
   UserProfileScreen({Key? key}) : super(key: key);
 
@@ -38,7 +37,6 @@ class UserProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      // --- (Bottom Nav Bar Anda tidak berubah, sudah benar) ---
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: 2,
@@ -53,7 +51,6 @@ class UserProfileScreen extends StatelessWidget {
               Navigator.pushReplacementNamed(context, '/bookings');
               break;
             case 2:
-              // Do nothing
               break;
           }
         },
@@ -78,7 +75,6 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- (Widget ini tidak berubah) ---
   Widget _buildProfileHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -107,38 +103,29 @@ class UserProfileScreen extends StatelessWidget {
   Widget _buildUserInfo(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    // Jika user (karena alasan aneh) null, tampilkan UI kosong
     if (user == null) {
       return SizedBox.shrink();
     }
 
-    // Gunakan FutureBuilder untuk mengambil data Firestore secara asinkron
-    // tanpa mengubah halaman ini menjadi StatefulWidget.
     return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      // Future: Ambil dokumen user dari Firestore
       future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
       builder: (context, snapshot) {
         String displayName;
         String email = user.email ?? 'No email provided';
-        final String? photoUrl = user.photoURL; // Ambil foto dari Auth
+        final String? photoUrl = user.photoURL; 
 
         if (snapshot.connectionState == ConnectionState.done &&
             snapshot.hasData &&
             snapshot.data!.exists) {
-          // --- SUKSES ---
-          // Jika data ada di Firestore, gunakan itu
           final userData = snapshot.data!.data()!;
           final String fullName = userData['full_name'] ?? '';
-          email = userData['email'] ?? email; // Ambil email dari Firestore
+          email = userData['email'] ?? email; 
           displayName =
               fullName.isNotEmpty ? fullName : _getFallbackDisplayName(user);
         } else {
-          // --- LOADING ATAU GAGAL ---
-          // Gunakan fallback (logika Anda sebelumnya)
           displayName = _getFallbackDisplayName(user);
         }
 
-        // --- Tampilkan UI Anda (tidak berubah) dengan data yang sudah diolah ---
         return Padding(
           padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 30.w),
           child: Row(
@@ -169,12 +156,12 @@ class UserProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      displayName, // <-- Ini sekarang dinamis (Firestore/Auth)
+                      displayName, 
                       style: TextStyle(
                           fontSize: 20.sp, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      email, // <-- Ini sekarang dinamis (Firestore/Auth)
+                      email,
                       style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                     ),
                   ],
@@ -187,7 +174,6 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- (Widget-widget di bawah ini tidak berubah, sudah benar) ---
   Widget _buildDivider(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),

@@ -29,7 +29,7 @@ class PersonalInformationPage extends StatelessWidget {
       backgroundColor: _lightGray,
       appBar: AppBar(
         backgroundColor: _darkGreen,
-        foregroundColor: Colors.white, // Sets back arrow and title to white
+        foregroundColor: Colors.white,
         title: Text(
           'Personal information',
           style: TextStyle(
@@ -49,7 +49,6 @@ class PersonalInformationPage extends StatelessWidget {
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20.h),
-            // Re-usable widget for info fields
             _buildInfoField(
               label: 'Name',
               value: displayName,
@@ -62,7 +61,7 @@ class PersonalInformationPage extends StatelessWidget {
             SizedBox(height: 16.h),
             _buildInfoField(
               label: 'Date of birth',
-              value: '10/03/2002', // Dummy data as in Figma
+              value: '10/03/2002', // Dummy data
             ),
             SizedBox(height: 16.h),
             _buildInfoField(
@@ -75,7 +74,7 @@ class PersonalInformationPage extends StatelessWidget {
     );
   }
 
-  // Helper widget to create the read-only fields from Figma
+  // Helper widget to create the read-only fields
   Widget _buildInfoField({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +86,7 @@ class PersonalInformationPage extends StatelessWidget {
         SizedBox(height: 4.h),
         TextFormField(
           initialValue: value,
-          readOnly: true, // Makes it non-editable
+          readOnly: true, 
           style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             filled: true,
@@ -98,7 +97,6 @@ class PersonalInformationPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(4.r),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
-            // Border when it's "focused" (though it's read-only)
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4.r),
               borderSide: const BorderSide(color: _darkGreen),
