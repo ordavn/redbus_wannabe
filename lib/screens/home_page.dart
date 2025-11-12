@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // <-- 1. IMPORT FIRESTORE
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -13,13 +13,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // --- Firebase Instances ---
   final user = FirebaseAuth.instance.currentUser;
-  final _firestore = FirebaseFirestore.instance; // <-- Instance Firestore
+  final _firestore = FirebaseFirestore.instance; 
 
-  // --- State untuk Data Firebase ---
-  String _fullName = ""; // <-- Untuk menyimpan nama pengguna dari Firestore
-  bool _isLoadingSearch = false; // <-- State loading untuk tombol search
+  String _fullName = "";
+  bool _isLoadingSearch = false;
 
   // Controllers for text fields
   final TextEditingController _fromController = TextEditingController();
@@ -48,7 +46,6 @@ class _HomePageState extends State<HomePage> {
     0xFF4A7C75,
   ); // Color for From/To fields in header
 
-  // --- LOGIC 1: Ambil Nama Pengguna saat Halaman Dimuat ---
   @override
   void initState() {
     super.initState();
@@ -68,7 +65,6 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       debugPrint("Error fetching user data: $e");
-      // Jika gagal, header akan menampilkan email (fallback)
     }
   }
 
@@ -86,7 +82,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: _lightGray, // Main background color for the body
       body: CustomScrollView(
         slivers: [
-          _buildHeader(), // <-- Header ini sekarang dinamis
+          _buildHeader(),
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -96,8 +92,8 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: 20.h), // Spacing from header
                   _buildAvailableDates(context),
                   _buildPassengerCounter(),
-                  _buildSearchButton(), // <-- Tombol ini sekarang punya logic
-                  _buildOffersSection(), // <-- Section ini sekarang dinamis
+                  _buildSearchButton(), 
+                  _buildOffersSection(),
                   SizedBox(height: 20.h),
                 ],
               ),
@@ -111,7 +107,6 @@ class _HomePageState extends State<HomePage> {
 
   // --- Header Widget ---
   Widget _buildHeader() {
-    // --- LOGIC 1 (Lanjutan): Tampilkan nama ---
     String displayName;
     if (_fullName.isNotEmpty) {
       displayName = _fullName;
@@ -123,7 +118,6 @@ class _HomePageState extends State<HomePage> {
     }
     // Capitalize first letter
     displayName = "${displayName[0].toUpperCase()}${displayName.substring(1)}";
-    // --- AKHIR DARI LOGIC 1 ---
 
     return SliverAppBar(
       backgroundColor: _darkGreen,
@@ -134,7 +128,7 @@ class _HomePageState extends State<HomePage> {
       title: Padding(
         padding: EdgeInsets.only(top: 8.h),
         child: Text(
-          "Hi $displayName,", // <-- UI Anda, sekarang dengan data dinamis
+          "Hi $displayName,",
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
@@ -156,8 +150,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ... (Widget _buildExpandedHeaderBackground, _buildProfileAvatar, _buildLocationField TIDAK BERUBAH) ...
-  // ... (Ini adalah widget UI murni Anda, jadi kita tidak sentuh) ...
   Widget _buildExpandedHeaderBackground() {
     return SafeArea(
       child: Padding(
@@ -193,7 +185,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            SizedBox(height: 16.h), // Padding at the very bottom
+            SizedBox(height: 16.h),
           ],
         ),
       ),
@@ -202,11 +194,11 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildProfileAvatar() {
     return CircleAvatar(
-      radius: 20.r, // Slightly smaller to fit better
+      radius: 20.r,
       backgroundColor: Colors.white,
       child: ClipOval(
         child: Image.asset(
-          'assets/images/imgEllipse2.png', // <-- UPDATE THIS
+          'assets/images/imgEllipse2.png',
           fit: BoxFit.cover,
           height: 40.h,
           width: 40.w,
@@ -229,22 +221,20 @@ class _HomePageState extends State<HomePage> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white70, fontSize: 16.sp),
         filled: true,
-        fillColor: _headerFieldColor, // Darker green from Figma
+        fillColor: _headerFieldColor, // Darker green
         border: InputBorder.none,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4.r), // SHARPER
+          borderRadius: BorderRadius.circular(4.r),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4.r), // SHARPER
+          borderRadius: BorderRadius.circular(4.r),
           borderSide: BorderSide.none,
         ),
       ),
     );
   }
 
-  // ... (Widget _buildAvailableDates, _buildDateChip, _showCalendarSheet TIDAK BERUBAH) ...
-  // ... (Ini adalah widget UI murni Anda dengan state lokal, jadi kita tidak sentuh) ...
   Widget _buildAvailableDates(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,8 +394,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ... (Widget _buildPassengerCounter, _buildCounterButton TIDAK BERUBAH) ...
-  // ... (Ini adalah widget UI murni Anda dengan state lokal, jadi kita tidak sentuh) ...
   Widget _buildPassengerCounter() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -414,7 +402,7 @@ class _HomePageState extends State<HomePage> {
       ), // No horizontal margin needed
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(4.r), // SHARPER
+        borderRadius: BorderRadius.circular(4.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -468,12 +456,12 @@ class _HomePageState extends State<HomePage> {
     return Material(
       color: _lightGray,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4.r), // SHARPER
+        borderRadius: BorderRadius.circular(4.r),
         side: BorderSide(color: _darkerGray),
       ),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(4.r), // SHARPER
+        borderRadius: BorderRadius.circular(4.r),
         child: Container(
           padding: EdgeInsets.all(4.r),
           child: Icon(icon, size: 20.sp, color: Colors.black),
@@ -482,9 +470,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- LOGIC 2: Fungsi Baru untuk Tombol Search ---
   void _searchBuses() {
-    // 1. Validasi input
     if (_fromController.text.trim().isEmpty ||
         _toController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -496,7 +482,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // 2. Kumpulkan semua parameter pencarian
     final searchParams = {
       'from': _fromController.text.trim(),
       'to': _toController.text.trim(),
@@ -504,25 +489,19 @@ class _HomePageState extends State<HomePage> {
       'passengers': _personCount,
     };
 
-    // 3. Navigasi ke halaman /busList dan kirim 'searchParams'
-    // Halaman /busList nanti akan menerima data ini dan melakukan query
     Navigator.pushNamed(context, '/busList', arguments: searchParams);
   }
-  // --- AKHIR DARI LOGIC 2 ---
 
-  // --- Search Button Widget ---
   Widget _buildSearchButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        // --- LOGIC 2 (Lanjutan): Hubungkan tombol ke fungsi baru ---
         onPressed: _isLoadingSearch ? null : _searchBuses,
-        // ---
         style: ElevatedButton.styleFrom(
           backgroundColor: _teal,
           padding: EdgeInsets.symmetric(vertical: 16.h),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4.r), // SHARPER
+            borderRadius: BorderRadius.circular(4.r),
           ),
         ),
         child: _isLoadingSearch
@@ -539,7 +518,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- Offers Section Widget ---
   Widget _buildOffersSection() {
     return Padding(
       padding: EdgeInsets.only(top: 24.h),
@@ -569,43 +547,34 @@ class _HomePageState extends State<HomePage> {
           ),
           SizedBox(height: 12.h),
 
-          // --- LOGIC 3: Ganti ListView statis dengan StreamBuilder ---
           SizedBox(
             height: 120.h,
             child: StreamBuilder<QuerySnapshot>(
-              // Query: Ambil 5 promo teratas yang masih berlaku
               stream: _firestore
                   .collection('offers')
                   .where('valid_until', isGreaterThanOrEqualTo: Timestamp.now())
                   .limit(5)
                   .snapshots(),
               builder: (context, snapshot) {
-                // Saat loading
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                // Jika error
                 if (snapshot.hasError) {
                   return const Center(child: Text("Failed to load offers."));
                 }
-                // Jika tidak ada data
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text("No offers available."));
                 }
 
-                // Jika ada data, tampilkan ListView
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     final offerDoc = snapshot.data!.docs[index];
-                    // Ubah data Dokumen Firestore menjadi Map
                     final offerData = offerDoc.data() as Map<String, dynamic>;
 
-                    // Beri jarak antar card
                     return Padding(
                       padding: EdgeInsets.only(right: 12.w),
-                      // Panggil widget _buildOfferCard Anda DENGAN data
                       child: _buildOfferCard(offerData),
                     );
                   },
@@ -613,48 +582,41 @@ class _HomePageState extends State<HomePage> {
               },
             ),
           ),
-          // --- AKHIR DARI LOGIC 3 ---
         ],
       ),
     );
   }
 
-  // --- LOGIC 3 (Lanjutan): Modifikasi widget Anda untuk menerima data ---
-  // Perhatikan perubahan signature: (Map<String, dynamic> offerData)
   Widget _buildOfferCard(Map<String, dynamic> offerData) {
-    // Ambil data dari Map, berikan nilai default jika null
     String title = offerData['title'] ?? "Promo Spesial";
     String promoCode = offerData['promo_code'] ?? "PROMO";
 
-    // Format tanggal
     Timestamp validUntilStamp = offerData['valid_until'] ?? Timestamp.now();
     String validUntil = DateFormat('d MMM').format(validUntilStamp.toDate());
-    // ---
 
-    // Ini adalah UI Anda, tidak saya ubah, hanya saya isi dengan data
     return Container(
       width: 250.w,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: _darkGreen,
-        borderRadius: BorderRadius.circular(12.r), // This rounding is correct
+        borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title, // <-- Data dinamis
+            title, 
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
-            maxLines: 2, // Tambahan kecil agar teks tidak overflow
+            maxLines: 2, 
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 8.h),
           Text(
-            "Valid till: $validUntil", // <-- Data dinamis
+            "Valid till: $validUntil",
             style: TextStyle(fontSize: 12.sp, color: Colors.grey[300]),
           ),
           const Spacer(),
@@ -665,7 +627,7 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(20.r),
             ),
             child: Text(
-              promoCode, // <-- Data dinamis
+              promoCode,
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
@@ -678,7 +640,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-  // --- AKHIR DARI LOGIC 3 ---
 
   // --- Bottom Navigation Bar ---
   Widget _buildBottomNavBar() {
@@ -692,7 +653,7 @@ class _HomePageState extends State<HomePage> {
       onTap: (index) {
         switch (index) {
           case 0:
-            // We are already on the Home page, do nothing.
+            // do nothing.
             break;
           case 1:
             // Navigate to Bookings
