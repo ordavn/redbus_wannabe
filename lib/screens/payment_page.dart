@@ -1,5 +1,6 @@
-import 'dart:math'; //Addition to payment result simulation
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
@@ -9,30 +10,74 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
-  final TextEditingController cardNumberController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController cvvController = TextEditingController();
+  final TextEditingController couponController = TextEditingController();
+  bool isProcessing = false;
+  double discount = 0;
+  bool isCouponApplied = false;
 
-  String? selectedMonth;
-  String? selectedYear;
+  // Function to apply coupon
+  void _applyCoupon(double total) {
+    final couponCode = couponController.text.trim().toUpperCase();
 
-  final List<String> months = List.generate(
-    12,
-    (index) => (index + 1).toString().padLeft(2, '0'),
-  );
-  final List<String> years = List.generate(
-    10,
-    (index) => (DateTime.now().year + index).toString(),
-  );
+    if (couponCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a coupon code")),
+      );
+      return;
+    }
 
-  bool isProcessing = false; //Additional: loading indicator
+    setState(() {
+      // Example coupon codes
+      if (couponCode == "SAVE10") {
+        discount = total * 0.10; // 10% discount
+        isCouponApplied = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Coupon applied! 10% discount"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (couponCode == "SAVE20") {
+        discount = total * 0.20; // 20% discount
+        isCouponApplied = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Coupon applied! 20% discount"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (couponCode == "FIRST50") {
+        discount = 50000; // Fixed 50k discount
+        isCouponApplied = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Coupon applied! Rp. 50,000 discount"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        discount = 0;
+        isCouponApplied = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid coupon code"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
-        {};
-    final total = args['total'] ?? 50000;
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
+    final double total = (args['total'] ?? 50000).toDouble();
+    final double finalTotal = (total - discount).clamp(0, double.infinity);
+
+    // Generate QR code data
+    final String qrData =
+        "PAYMENT_ID_${DateTime.now().millisecondsSinceEpoch}_AMOUNT_${finalTotal.toInt()}";
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -47,151 +92,189 @@ class _PaymentPageState extends State<PaymentPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              "Card Number",
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: cardNumberController,
-              decoration: InputDecoration(
-                hintText: "Enter 12 digit card number",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
-                ),
+            // Total Amount Display
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                  ),
+                ],
               ),
-              keyboardType: TextInputType.number,
-              maxLength: 12,
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Valid Thru",
-                        style: TextStyle(fontWeight: FontWeight.w600),
+              child: Column(
+                children: [
+                  const Text(
+                    "Total Payment",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (discount > 0) ...[
+                    Text(
+                      "Rp. ${total.toInt()}",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                        decoration: TextDecoration.lineThrough,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: selectedMonth,
-                              hint: const Text("Month"),
-                              items: months
-                                  .map(
-                                    (m) => DropdownMenuItem(
-                                      value: m,
-                                      child: Text(m),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedMonth = v),
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 14,
-                                ),
-                              ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(
+                    "Rp. ${finalTotal.toInt()}",
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E5C4C),
+                    ),
+                  ),
+                  if (discount > 0)
+                    Text(
+                      "You saved Rp. ${discount.toInt()}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // QR Code Section
+            const Text(
+              "Scan QR Code to Pay",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: QrImageView(
+                data: qrData,
+                version: QrVersions.auto,
+                size: 250.0,
+                backgroundColor: Colors.white,
+                errorCorrectionLevel: QrErrorCorrectLevel.H,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Coupon Input Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Have a Coupon Code?",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: couponController,
+                          decoration: InputDecoration(
+                            hintText: "Enter coupon code",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: selectedYear,
-                              hint: const Text("Year"),
-                              items: years
-                                  .map(
-                                    (y) => DropdownMenuItem(
-                                      value: y,
-                                      child: Text(y),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedYear = v),
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 14,
-                                ),
-                              ),
+                          textCapitalization: TextCapitalization.characters,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () => _applyCoupon(total),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00897B),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "Apply",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isCouponApplied)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Coupon applied: ${couponController.text.toUpperCase()}",
+                            style: const TextStyle(
+                              color: Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "CVV",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: cvvController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          hintText: "CVV",
-                          suffixIcon: const Icon(Icons.visibility_off_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 3,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            const Text(
-              "Card Holder’s Name",
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                hintText: "Name on Card",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
-                ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -211,14 +294,15 @@ class _PaymentPageState extends State<PaymentPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Total",
+                  "Final Total",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  "Rp. ${total.toString()}",
+                  "Rp. ${finalTotal.toInt()}",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: Color(0xFF2E5C4C),
                   ),
                 ),
               ],
@@ -234,33 +318,15 @@ class _PaymentPageState extends State<PaymentPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-
-                //payment button logic
                 onPressed: isProcessing
                     ? null
                     : () async {
-                        if (cardNumberController.text.length < 12 ||
-                            cvvController.text.length < 3 ||
-                            nameController.text.isEmpty ||
-                            selectedMonth == null ||
-                            selectedYear == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Please complete all payment details correctly.",
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-
                         setState(() => isProcessing = true);
 
-                        await Future.delayed(
-                          const Duration(seconds: 2),
-                        ); //payment process simulation
-                        final success = Random()
-                            .nextBool(); // random true/false
+                        // Simulate payment processing
+                        await Future.delayed(const Duration(seconds: 2));
+
+                        final success = Random().nextBool(); // Random success/fail
                         setState(() => isProcessing = false);
 
                         if (!mounted) return;
@@ -286,5 +352,11 @@ class _PaymentPageState extends State<PaymentPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    couponController.dispose();
+    super.dispose();
   }
 }
