@@ -1,55 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class BusListPage extends StatelessWidget {
   const BusListPage({super.key});
 
+  // Helper format rupiah
+  String formatRupiah(int price) {
+    return NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(price);
+  }
+
+  String getTerminalName(String city) {
+    // Ubah ke huruf kecil biar aman
+    switch (city.toLowerCase()) {
+      case 'malang':
+        return 'Terminal Arjosari';
+      case 'surabaya':
+        return 'Terminal Bungurasih'; // Purabaya
+      case 'jogjakarta':
+      case 'yogyakarta':
+        return 'Terminal Giwangan';
+      case 'jakarta':
+        return 'Terminal Pulo Gebang';
+      case 'bandung':
+        return 'Terminal Leuwipanjang';
+      default:
+        return 'Terminal $city'; // Default kalau kota tidak dikenal
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> buses = [
-      {
-        'name': 'MTrans.co.id',
-        'route': 'Malang → Surabaya',
-        'price': 'Rp 50.000',
-        'departure': '20:30',
-        'arrival': '23:40',
-        'type': 'AC Sleeper 2+1',
-        'rating': '4.5',
-      },
-      {
-        'name': 'JURAGAN 99',
-        'route': 'Malang → Jogjakarta',
-        'price': 'Rp 135.000',
-        'departure': '10:00',
-        'arrival': '16:20',
-        'type': 'Sleeper Bus',
-        'rating': '4.7',
-      },
-      {
-        'name': 'Harapan Jaya',
-        'route': 'Madura → Surabaya',
-        'price': 'Rp 35.000',
-        'departure': '11:00',
-        'arrival': '13:15',
-        'type': 'Economy 2+2',
-        'rating': '4.3',
-      },
-    ];
+    // 1. TERIMA DATA DARI HALAMAN SEBELUMNYA
+    final Map<String, dynamic> args = 
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    
+    final String selectedOrigin = args['origin'];      // "Malang"
+    final String selectedDestination = args['destination']; // "Jogjakarta"
+    final String selectedDate = args['date'] ?? 'Today'; 
+    final String terminalAsal = getTerminalName(selectedOrigin);
+    final String terminalTujuan = getTerminalName(selectedDestination);
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.green[700],
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 2. JUDUL DINAMIS (Sesuai Pilihan User)
             Text(
-              'Malang → Surabaya',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              '$selectedOrigin → $selectedDestination', 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Terminal Arjosari • Terminal Bungurasih',
-              style: TextStyle(fontSize: 13, color: Colors.white70),
+              '$terminalAsal • $terminalTujuan', // Nanti bisa didinamiskan juga
+              style: const TextStyle(fontSize: 13, color: Colors.white70),
             ),
           ],
         ),
@@ -63,9 +70,9 @@ class BusListPage extends StatelessWidget {
                 color: Colors.green[800],
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                '15 Oct, Wed',
-                style: TextStyle(color: Colors.white, fontSize: 13),
+              child: Text(
+                selectedDate, // Tanggal Dinamis
+                style: const TextStyle(color: Colors.white, fontSize: 13),
               ),
             ),
           ),
@@ -73,122 +80,162 @@ class BusListPage extends StatelessWidget {
         centerTitle: false,
       ),
 
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: buses.length,
-        itemBuilder: (context, index) {
-          final bus = buses[index];
-          return InkWell(
-            borderRadius: BorderRadius.circular(15),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/busDetail',
-                arguments: bus, // kirim data bus ke halaman detail
-              );
-            },
+      // 3. FILTER QUERY DATABASE
+// ... (Bagian atas kode BusListPage tetap sama) ...
 
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+      // GANTI BAGIAN BODY DENGAN INI:
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('trips')
+            .where('origin', isEqualTo: selectedOrigin)
+            .where('destination', isEqualTo: selectedDestination)
+            .snapshots(),
+        
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+             return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.bus_alert, size: 50, color: Colors.grey),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Tidak ada bus dari $selectedOrigin ke $selectedDestination',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
               ),
-              elevation: 3,
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    //Top row: Bus name + price
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          bus['name'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.red,
-                          ),
-                        ),
-                        Text(
-                          bus['price'],
-                          style: TextStyle(
-                            color: Colors.green[700],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
+            );
+          }
 
-                    //Middle row: departure time, duration, arrival time
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          final buses = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: buses.length,
+            itemBuilder: (context, index) {
+              // 1. AMBIL DATA DARI FIREBASE
+              final busData = buses[index].data() as Map<String, dynamic>;
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(15),
+                onTap: () {
+                  // Navigasi ke detail bus (opsional)
+                  Navigator.pushNamed(context, '/busDetail', arguments: busData);
+                },
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  elevation: 3,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          bus['departure'],
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Column(
+                        // --- BARIS 1: NAMA BUS & HARGA ---
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '3h 10m',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                              busData['name'] ?? 'Bus Tanpa Nama',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.red,
                               ),
                             ),
-                            Icon(
-                              Icons.more_horiz,
-                              size: 18,
-                              color: Colors.grey,
+                            Text(
+                              // Format Harga (pastikan ada fungsi formatRupiah di class ini)
+                              formatRupiah(busData['price'] ?? 0),
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
-                        Text(
-                          bus['arrival'],
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                        const SizedBox(height: 8),
 
-                    //Bottom row: bus type, seats, rating
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          bus['type'],
-                          style: const TextStyle(color: Colors.black54),
-                        ),
+                        // --- BARIS 2: JAM BERANGKAT - DURASI - JAM TIBA ---
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(
-                              Icons.star,
-                              size: 16,
-                              color: Colors.green,
-                            ),
-                            const SizedBox(width: 4),
                             Text(
-                              bus['rating'],
+                              busData['departure'] ?? '--:--', // Jam Berangkat
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Column(
+                              children: [
+                                Text(
+                                  'Est. Time', // Bisa dihitung manual nanti
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.more_horiz,
+                                  size: 18,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                            Text(
+                              busData['arrival'] ?? '--:--', // Jam Tiba
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // --- BARIS 3: TIPE BUS & RATING ---
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              busData['type'] ?? 'Standard', // Tipe Bus
                               style: const TextStyle(color: Colors.black54),
                             ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  size: 16,
+                                  color: Colors.green,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  // Pastikan rating diubah jadi String
+                                  (busData['rating'] ?? 0.0).toString(),
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),

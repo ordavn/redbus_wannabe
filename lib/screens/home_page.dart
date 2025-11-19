@@ -482,10 +482,12 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    String formattedDate = DateFormat('d MMM, EEE').format(_selectedDate);
+
     final searchParams = {
-      'from': _fromController.text.trim(),
-      'to': _toController.text.trim(),
-      'date': _selectedDate,
+      'origin': _fromController.text.trim(),
+      'destination': _toController.text.trim(),
+      'date': formattedDate,
       'passengers': _personCount,
     };
 

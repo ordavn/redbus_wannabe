@@ -1,12 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class BusDetailPage extends StatelessWidget {
   const BusDetailPage({super.key});
 
+  // Helper format rupiah
+  String formatRupiah(int price) {
+    return NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(price);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bus =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    // 1. TERIMA DATA DARI HALAMAN SEBELUMNYA
+    final busData = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+
+    if (busData == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Error")),
+        body: const Center(child: Text("Data bus tidak ditemukan")),
+      );
+    }
+
+    // 2. AMBIL DATA UTAMA
+    final String name = busData['name'] ?? 'Nama Bus';
+    final int price = busData['price'] ?? 0;
+    final String departureTime = busData['departure'] ?? '--:--';
+    final String arrivalTime = busData['arrival'] ?? '--:--';
+    final String type = busData['type'] ?? 'Standard';
+    final String rating = (busData['rating'] ?? 0.0).toString();
+    final String origin = busData['origin'] ?? 'Asal';
+    final String destination = busData['destination'] ?? 'Tujuan';
+
+    // 3. AMBIL DATA BARU (TERMINAL)
+    // Jika di database belum diisi, akan muncul default 'Terminal ...'
+    final String terminalOrigin = busData['terminal_origin'] ?? 'Terminal $origin';
+    final String terminalDest = busData['terminal_dest'] ?? 'Terminal $destination';
+
+    // 4. AMBIL DATA BARU (AMENITIES)
+    // Kita ambil sebagai List<dynamic> lalu konversi ke List<String>
+    final List<dynamic> amenitiesRaw = busData['amenities'] ?? [];
+    final List<String> amenities = amenitiesRaw.map((e) => e.toString()).toList();
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -17,105 +50,57 @@ class BusDetailPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          bus?['name'] ?? 'MTrans',
+          name,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green[800],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Center(
-              child: Text(
-                '15 Oct',
-                style: TextStyle(color: Colors.white, fontSize: 13),
-              ),
-            ),
-          ),
-        ],
+        // ... (Actions tanggal tetap sama, bisa dinamiskan nanti)
       ),
 
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ===== BUS INFO CARD =====
+          // ===== BUS INFO CARD (SAMA SEPERTI SEBELUMNYA) =====
           Card(
             elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // top row: logo text + price
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'MTrans.co.id',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      Text(
+                        name,
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
-                      const Text(
-                        'Rp. 50,000',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      Text(
+                        formatRupiah(price),
+                        style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // time row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '20:30',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          Text(
-                            'Destination 1',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          Text(departureTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text(origin, style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
-                      Text(
-                        '3h 10m',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
+                      const Text('Est. Time', style: TextStyle(color: Colors.grey, fontSize: 12)),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            '23:40',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          Text(
-                            'Destination 2',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          Text(arrivalTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text(destination, style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ],
@@ -123,24 +108,16 @@ class BusDetailPage extends StatelessWidget {
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        'MTrans, Executive(2+1)',
-                        style: TextStyle(color: Colors.black54),
-                      ),
+                    children: [
+                      Text('$name, $type', style: const TextStyle(color: Colors.black54)),
                       Row(
                         children: [
-                          Icon(Icons.star, color: Colors.green, size: 16),
-                          SizedBox(width: 4),
-                          Text('4.0'),
+                          const Icon(Icons.star, color: Colors.green, size: 16),
+                          const SizedBox(width: 4),
+                          Text(rating),
                         ],
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '8 Seats',
-                    style: TextStyle(color: Colors.green, fontSize: 13),
                   ),
                 ],
               ),
@@ -149,45 +126,41 @@ class BusDetailPage extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ===== BOARDING POINTS =====
+          // ===== BOARDING POINTS (DINAMIS) =====
           Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Boarding points',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('20:30'),
-                          Text(
-                            '15 Oct',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
+                          Text(departureTime),
+                          const Text('Today', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // TERMINAL ASAL DARI DATABASE
                           Text(
-                            'Terminal 1',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            terminalOrigin,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'Terminal 1 address',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            '$terminalOrigin Address',
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ],
                       ),
@@ -200,45 +173,41 @@ class BusDetailPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // ===== DROPPING POINTS =====
+          // ===== DROPPING POINTS (DINAMIS) =====
           Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Dropping points',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('23:40'),
-                          Text(
-                            '15 Oct',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
+                          Text(arrivalTime),
+                          const Text('Today', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // TERMINAL TUJUAN DARI DATABASE
                           Text(
-                            'Terminal 2',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            terminalDest,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'Terminal 2 address',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            '$terminalDest Address',
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ],
                       ),
@@ -251,12 +220,10 @@ class BusDetailPage extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // ===== AMENITIES =====
+          // ===== AMENITIES (DINAMIS LIST) =====
           Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -267,10 +234,18 @@ class BusDetailPage extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 12),
-                  buildAmenity(Icons.power, 'Charging Point'),
-                  buildAmenity(Icons.fastfood, 'Food and drinks'),
-                  buildAmenity(Icons.emergency, 'Emergency exit'),
-                  buildAmenity(Icons.fire_extinguisher, 'Fire Extinguisher'),
+
+                  // LOGIKA: Jika ada data amenities, tampilkan list.
+                  // Jika kosong, tampilkan pesan "No amenities info".
+                  if (amenities.isNotEmpty)
+                    ...amenities.map((amenityName) {
+                      return buildAmenity(amenityName);
+                    })
+                  else
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text("No amenities info available.", style: TextStyle(color: Colors.grey)),
+                    ),
                 ],
               ),
             ),
@@ -283,12 +258,10 @@ class BusDetailPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green[700],
               minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
-              Navigator.pushNamed(context, '/seatSelection', arguments: bus);
+              Navigator.pushNamed(context, '/seatSelection', arguments: busData);
             },
             child: const Text(
               'Confirm',
@@ -300,7 +273,29 @@ class BusDetailPage extends StatelessWidget {
     );
   }
 
-  Widget buildAmenity(IconData icon, String text) {
+  // Helper function untuk memilih ikon berdasarkan nama fasilitas
+  Widget buildAmenity(String text) {
+    IconData icon;
+
+    // Logika sederhana memilih ikon
+    if (text.toLowerCase().contains('charging') || text.toLowerCase().contains('power')) {
+      icon = Icons.power;
+    } else if (text.toLowerCase().contains('food') || text.toLowerCase().contains('drink') || text.toLowerCase().contains('meal')) {
+      icon = Icons.fastfood;
+    } else if (text.toLowerCase().contains('emergency')) {
+      icon = Icons.emergency;
+    } else if (text.toLowerCase().contains('fire')) {
+      icon = Icons.fire_extinguisher;
+    } else if (text.toLowerCase().contains('wifi')) {
+      icon = Icons.wifi;
+    } else if (text.toLowerCase().contains('tv')) {
+      icon = Icons.tv;
+    } else if (text.toLowerCase().contains('ac') || text.toLowerCase().contains('air')) {
+      icon = Icons.ac_unit;
+    } else {
+      icon = Icons.check_circle_outline; // Ikon default
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
