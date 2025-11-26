@@ -209,9 +209,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildLocationField(TextEditingController controller, String hint) {
+Widget _buildLocationField(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
+      readOnly: true, // Agar keyboard tidak muncul
+      onTap: () {
+        _showCitySelector(controller); // Panggil fungsi selector saat diklik
+      },
       style: TextStyle(
         color: Colors.white,
         fontSize: 16.sp,
@@ -223,6 +227,8 @@ class _HomePageState extends State<HomePage> {
         filled: true,
         fillColor: _headerFieldColor, // Darker green
         border: InputBorder.none,
+        // Tambahkan ikon panah ke bawah
+        suffixIcon: Icon(Icons.keyboard_arrow_down, color: Colors.white70, size: 20.sp),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(4.r),
           borderSide: BorderSide.none,
@@ -232,6 +238,81 @@ class _HomePageState extends State<HomePage> {
           borderSide: BorderSide.none,
         ),
       ),
+    );
+  }
+  
+  void _showCitySelector(TextEditingController controller) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Select City",
+                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 24.sp),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  // Pastikan koleksi 'cities' sudah dibuat di Firebase!
+                  stream: _firestore.collection('cities').orderBy('name').snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(child: Text("No cities available."));
+                    }
+
+                    final cities = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      itemCount: cities.length,
+                      itemBuilder: (context, index) {
+                        final cityData = cities[index].data() as Map<String, dynamic>;
+                        final cityName = cityData['name'] ?? 'Unknown';
+
+                        return ListTile(
+                          leading: Icon(Icons.location_city, color: _teal, size: 24.sp),
+                          title: Text(
+                            cityName,
+                            style: TextStyle(fontSize: 16.sp),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              controller.text = cityName;
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

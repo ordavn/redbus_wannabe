@@ -99,10 +99,22 @@ class BusListPage extends StatelessWidget {
 
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('trips')
-            .where('origin', isEqualTo: selectedOrigin)
-            .where('destination', isEqualTo: selectedDestination)
-            .snapshots(),
+    .collection('trips')
+    .where(
+      Filter.or(
+        // KEMUNGKINAN 1: Pencarian Normal (Sesuai Database)
+        Filter.and(
+          Filter('origin', isEqualTo: selectedOrigin),
+          Filter('destination', isEqualTo: selectedDestination),
+        ),
+        // KEMUNGKINAN 2: Pencarian Terbalik (User cari kebalikannya)
+        Filter.and(
+          Filter('origin', isEqualTo: selectedDestination), // Asal di DB = Tujuan User
+          Filter('destination', isEqualTo: selectedOrigin), // Tujuan di DB = Asal User
+        ),
+      ),
+    )
+    .snapshots(),
 
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -141,6 +153,21 @@ class BusListPage extends StatelessWidget {
             itemCount: buses.length,
             itemBuilder: (context, index) {
               final busData = buses[index].data() as Map<String, dynamic>;
+              busData['id'] = buses[index].id;
+              
+              bool isReversed = busData['origin'] != selectedOrigin;
+
+              Map<String, dynamic> adjustedBusData = Map.from(busData);
+
+              if (isReversed) {
+                // Tukar Kota
+                adjustedBusData['origin'] = selectedOrigin; 
+                adjustedBusData['destination'] = selectedDestination;
+                
+                // Tukar Terminal (Pakai fungsi helper getTerminalName kita tadi)
+                adjustedBusData['terminal_origin'] = getTerminalName(selectedOrigin);
+                adjustedBusData['terminal_dest'] = getTerminalName(selectedDestination);
+              }
 
               return InkWell(
                 borderRadius: BorderRadius.circular(15.r),
@@ -148,18 +175,16 @@ class BusListPage extends StatelessWidget {
                   Navigator.pushNamed(
                     context,
                     '/busDetail',
-                    arguments: busData,
+                    arguments: adjustedBusData,
                   );
                 },
                 child: Card(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      12.r,
-                    ), // BORDER RADIUS DISESUAIKAN
+                    borderRadius: BorderRadius.circular(12.r,), // BORDER RADIUS DISESUAIKAN
                   ),
-                  elevation: 2, // ELEVATION DIKURANGI
+                  elevation: 2, 
                   margin: EdgeInsets.only(bottom: 12.h),
-                  color: Colors.white, // BACKGROUND CARD PUTIH
+                  color: Colors.white, 
                   child: Padding(
                     padding: EdgeInsets.all(14.w),
                     child: Column(

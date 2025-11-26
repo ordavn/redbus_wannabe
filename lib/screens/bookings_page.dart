@@ -25,41 +25,74 @@ class _BookingsPageState extends State<BookingsPage> {
   static const Color _confirmedGreen = Color(0xFF2E7D32); // For 'Completed'
   static const Color _canceledRed = Color(0xFFC62828); // For 'Canceled'
 
-  // 2. NEW FUNCTION TO GET THE DATA STREAM
-  Stream<List<Booking>> _fetchBookingsStream() {
-    // ---
-    // STEP 1: USE THIS FOR DUMMY DATA (FOR NOW)
-    // This instantly returns your dummy list as a "stream"
-    return Stream.value(dummyBookings);
-    // ---
-
-    /*
-    // ---
-    // STEP 2: USE THIS FOR REAL FIREBASE DATA (LATER)
-    // When you're ready, delete the "Stream.value(dummyBookings)" line
-    // and uncomment the code below.
+// --- TAMBAHKAN FUNGSI SAKTI INI ---
+  Future<void> _cancelBookingAndFreeSeats(Booking booking) async {
+    if (booking.tripId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Gagal: ID Bus tidak ditemukan (Data Lama)")),
+    );
     
-    // Get the current user
+    await FirebaseFirestore.instance
+        .collection('bookings')
+        .doc(booking.id)
+        .update({'status': 'Canceled'});
+        
+    return; // Stop di sini
+  }
+    try {
+      // 1. Mulai Batch (Agar proses atomik/bersamaan)
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+
+      // Referensi ke dokumen Booking (History User)
+      DocumentReference bookingRef = 
+          FirebaseFirestore.instance.collection('bookings').doc(booking.id);
+      
+
+      DocumentReference tripRef = 
+          FirebaseFirestore.instance.collection('trips').doc(booking.tripId); 
+
+      // 2. Perintah: Ubah status booking jadi 'Canceled'
+      batch.update(bookingRef, {'status': 'Canceled'});
+
+      // 3. Perintah: Hapus kursi dari array 'booked_seats' di data bus
+      // FieldValue.arrayRemove akan mencari angka kursi yang sama dan membuangnya
+      batch.update(tripRef, {
+        'booked_seats': FieldValue.arrayRemove(booking.seats)
+      });
+
+      // 4. Jalankan semua perintah
+      await batch.commit();
+
+      if (mounted) {
+        _showBookingCanceledDialog(context);
+      }
+
+    } catch (e) {
+      print("Error canceling: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal membatalkan: $e")),
+      );
+    }
+  }
+
+Stream<List<Booking>> _fetchBookingsStream() {
     final user = FirebaseAuth.instance.currentUser;
+    
     if (user == null) {
-      // If no user, return a stream of an empty list
-      return Stream.value([]);
+      return Stream.value([]); // Jika belum login, list kosong
     }
 
-    // This will listen for REAL-TIME updates from Firestore
     return FirebaseFirestore.instance
-        .collection('users') // Or your main collection
-        .doc(user.uid) // Get this user's document
-        .collection('bookings') // Get their 'bookings' sub-collection
-        .snapshots() // This returns the stream
+        .collection('bookings') // Masuk ke koleksi 'bookings'
+        .where('userId', isEqualTo: user.uid) // Hanya ambil punya user ini
+        .orderBy('createdAt', descending: true) // Urutkan dari yang terbaru
+        .snapshots()
         .map((snapshot) {
-          // This converts the Firebase documents into Booking objects
+          // Ubah setiap dokumen Firebase menjadi object Booking
           return snapshot.docs
               .map((doc) => Booking.fromFirestore(doc))
               .toList();
         });
-    // ---
-    */
   }
 
 // Method to show cancel confirmation dialog
@@ -89,26 +122,26 @@ void _showCancelDialog(BuildContext context, Booking booking) {
               Row(
                 children: [
                   // Yes button (Red)
+// Yes button (Red)
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close confirmation dialog
-                        
-                        // TODO: Add actual cancel booking logic here
-                        // For example: Update Firebase, change booking status, etc.
-                        
-                        // Show success dialog
-                        _showBookingCanceledDialog(context);
-                        
-                        print('Booking canceled: ${booking.id}');
-                      },
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: _canceledRed, width: 2),
+                        side: const BorderSide(color: _canceledRed, width: 2),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                       ),
+                      // --- GANTI BAGIAN INI ---
+                      onPressed: () {
+                        // 1. Tutup Dialog Konfirmasi dulu
+                        Navigator.of(context).pop(); 
+                        
+                        // 2. Panggil fungsi "Sakti" yang tadi kita buat
+                        // Fungsi ini akan mengurus pembatalan + penghapusan kursi sekaligus
+                        _cancelBookingAndFreeSeats(booking);
+                      },
+                      // ------------------------
                       child: Text(
                         'Yes',
                         style: TextStyle(
