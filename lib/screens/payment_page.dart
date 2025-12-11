@@ -370,10 +370,10 @@ class _PaymentPageState extends State<PaymentPage> {
       });
 
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/bookings', (route) => false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Payment Successful!"), backgroundColor: Colors.green),
         );
+        Navigator.pop(context, true);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
