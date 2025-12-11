@@ -348,15 +348,20 @@ class _PaymentPageState extends State<PaymentPage> {
     if (user == null) return;
 
     try {
-      // Simpan data booking lengkap
+      DateTime travelDate;
+      if (busData['travelDate'] != null) {
+        travelDate = DateTime.parse(busData['travelDate']);
+      } else {
+        travelDate = DateTime.now();
+      }
       await FirebaseFirestore.instance.collection('bookings').add({
         'userId': user.uid,
-        'busId': busData['id'], // PENTING: ID Dokumen Bus untuk fitur cancel
+        'busId': busData['id'],
         'busName': busData['name'],
         'origin': busData['origin'],
         'destination': busData['destination'],
         'departureTime': busData['departure'],
-        'date': Timestamp.now(), // Tanggal transaksi
+        'date': Timestamp.fromDate(travelDate),
         'seats': seats,
         'totalPrice': finalPrice, // Harga yang sudah didiskon
         'status': 'Completed',
@@ -365,7 +370,6 @@ class _PaymentPageState extends State<PaymentPage> {
       });
 
       if (mounted) {
-        // Sukses, pindah ke halaman Bookings
         Navigator.pushNamedAndRemoveUntil(context, '/bookings', (route) => false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Payment Successful!"), backgroundColor: Colors.green),

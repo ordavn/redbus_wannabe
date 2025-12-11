@@ -22,7 +22,7 @@ class BookingDetailsPage extends StatelessWidget {
     
     // Logika mempercantik nama (ambil depan email & kapitalisasi)
     if (user?.email != null && displayName == user!.email) {
-      displayName = user!.email!.split('@').first;
+      displayName = user.email!.split('@').first;
       if (displayName.isNotEmpty) {
         displayName = "${displayName[0].toUpperCase()}${displayName.substring(1)}";
       }

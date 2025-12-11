@@ -569,6 +569,7 @@ Widget _buildLocationField(TextEditingController controller, String hint) {
       'origin': _fromController.text.trim(),
       'destination': _toController.text.trim(),
       'date': formattedDate,
+      'dateRaw' : _selectedDate.toIso8601String(),
       'passengers': _personCount,
     };
 

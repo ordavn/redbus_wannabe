@@ -21,7 +21,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Mengambil data bus termasuk ID dokumennya
     final bus = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     final String busId = bus?['id'] ?? ''; // Pastikan ID ini ada!
 
@@ -51,13 +50,10 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
         ),
       ),
       
-      // WRAP BODY DENGAN STREAMBUILDER
-      // Ini agar kita bisa melihat kursi yang dibooking orang lain secara REAL-TIME
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('trips').doc(busId).snapshots(),
         builder: (context, snapshot) {
           
-          // 1. Handle Loading & Error
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -65,8 +61,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             return const Center(child: Text("Data bus tidak ditemukan"));
           }
 
-          // 2. AMBIL DATA KURSI YANG SUDAH DIBOOKING DARI DATABASE
-          // Kita ambil array 'booked_seats'. Jika belum ada, anggap list kosong.
           var busData = snapshot.data!.data() as Map<String, dynamic>;
           List<dynamic> bookedSeatsDynamic = busData['booked_seats'] ?? [];
           List<int> alreadyBookedSeats = bookedSeatsDynamic.map((e) => int.parse(e.toString())).toList();
@@ -124,7 +118,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                   ),
                 ),
 
-                // Bagian Bawah (Total & Button)
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
                   decoration: BoxDecoration(
@@ -144,7 +137,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                             ),
                           ),
                           Text(
-                            'Rp. ${totalPrice.toString()}', // Formatlah pakai intl kalau mau
+                            'Rp. ${totalPrice.toString()}',
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w600,
@@ -168,15 +161,14 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                           onPressed: _selectedSeats.isEmpty
                               ? null
                               : () {
-                                  // Panggil Fungsi Booking Aman
                                   _confirmBooking(context, busId, bus);
                                   Navigator.pushNamed(
                                     context, 
-                                      '/payment', // Pindah ke Payment Page dulu
+                                      '/payment',
                                     arguments: {
-                                      'bus': busData, // Bawa semua data bus
-                                      'seats': _selectedSeats, // Bawa kursi yg dipilih
-                                      'total': _selectedSeats.length * seatPrice, // Bawa total harga
+                                      'bus': busData,
+                                      'seats': _selectedSeats,
+                                      'total': _selectedSeats.length * seatPrice,
                                     }
                                   );
                                 },
@@ -201,16 +193,14 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     );
   }
 
-  // Widget Kursi (Updated dengan logika booked)
   Widget _buildSeat(int index, List<int> alreadyBookedSeats) {
     final isSelected = _selectedSeats.contains(index);
     
-    // CEK APAKAH KURSI INI SUDAH ADA DI DATABASE?
     final isUnavailable = alreadyBookedSeats.contains(index); 
 
     return GestureDetector(
       onTap: isUnavailable
-          ? null // Jika sudah dibooking orang, gak bisa dipencet
+          ? null
           : () {
               setState(() {
                 if (isSelected) {
@@ -225,10 +215,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
         width: 40.w,
         height: 40.h,
         decoration: BoxDecoration(
-          // Logika Warna:
-          // Abu-abu = Punya orang lain (Unavailable)
-          // Teal = Kita pilih (Selected)
-          // Putih/Border Hitam = Kosong
           color: isUnavailable 
               ? Colors.grey[300] 
               : (isSelected ? _teal : Colors.white),
@@ -246,10 +232,10 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
           child: Icon(
             Icons.event_seat,
             color: isUnavailable
-                ? Colors.grey // Icon abu tua kalau booked
+                ? Colors.grey
                 : isSelected
-                    ? Colors.white // Icon putih kalau selected
-                    : Colors.black54, // Icon hitam kalau kosong
+                    ? Colors.white
+                    : Colors.black54,
             size: 26.sp,
           ),
         ),
@@ -259,7 +245,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
 
   // --- LOGIKA TRANSAKSI BOOKING (Anti Bentrok) ---
   Future<void> _confirmBooking(BuildContext context, String busId, Map<String, dynamic>? busData) async {
-    // Tampilkan Loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -269,43 +254,34 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     try {
       final tripRef = FirebaseFirestore.instance.collection('trips').doc(busId);
 
-      // JALANKAN TRANSAKSI DATABASE
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // 1. Baca data bus TERBARU detik ini juga
         DocumentSnapshot snapshot = await transaction.get(tripRef);
 
         if (!snapshot.exists) {
           throw Exception("Bus trip does not exist!");
         }
 
-        // 2. Ambil list kursi yang sudah laku saat ini
         List<dynamic> currentBooked = snapshot.get('booked_seats') ?? [];
         List<int> bookedList = currentBooked.map((e) => int.parse(e.toString())).toList();
 
-        // 3. CEK TABRAKAN: Apakah kursi yang kita pilih, BARUSAN diambil orang?
         for (int seat in _selectedSeats) {
           if (bookedList.contains(seat)) {
             throw Exception("Oh no! Seat $seat was just taken by someone else."); 
           }
         }
 
-        // 4. Jika aman, gabungkan kursi lama + kursi baru kita
         List<int> newBookedList = [...bookedList, ..._selectedSeats];
 
-        // 5. Update Database
         transaction.update(tripRef, {
           'booked_seats': newBookedList
         });
       });
 
-      // Tutup Loading
       Navigator.pop(context); 
 
-      // Navigasi ke Pembayaran (atau success page)
-      // Kirim data kursi yang berhasil diamankan
       Navigator.pushNamed(
         context, 
-        '/payment', // Pastikan rute ini ada
+        '/payment',
         arguments: {
           'bus': busData,
           'seats': _selectedSeats,
@@ -314,10 +290,8 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       );
 
     } catch (e) {
-      // Tutup Loading
       Navigator.pop(context);
       
-      // Tampilkan Pesan Error (Misal: Kursi direbut orang)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll("Exception: ", "")),
@@ -325,7 +299,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
         ),
       );
       
-      // Refresh state (bersihkan pilihan)
       setState(() {
         _selectedSeats.clear();
       });

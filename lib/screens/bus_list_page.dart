@@ -21,7 +21,6 @@ class BusListPage extends StatelessWidget {
   }
 
   String getTerminalName(String city) {
-    // Ubah ke huruf kecil biar aman
     switch (city.toLowerCase()) {
       case 'malang':
         return 'Terminal Arjosari';
@@ -52,9 +51,9 @@ class BusListPage extends StatelessWidget {
     final String terminalTujuan = getTerminalName(selectedDestination);
 
     return Scaffold(
-      backgroundColor: _lightGray, // WARNA BACKGROUND DIUBAH
+      backgroundColor: _lightGray,
       appBar: AppBar(
-        backgroundColor: _darkGreen, // WARNA APPBAR DIUBAH
+        backgroundColor: _darkGreen,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -62,7 +61,7 @@ class BusListPage extends StatelessWidget {
               '$selectedOrigin → $selectedDestination',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 18.sp, // MENGGUNAKAN .sp
+                fontSize: 18.sp,
                 color: Colors.white,
               ),
             ),
@@ -80,7 +79,7 @@ class BusListPage extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: _teal, // WARNA TAG TANGGAL DIUBAH
+                color: _teal,
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
@@ -153,18 +152,19 @@ class BusListPage extends StatelessWidget {
             itemCount: buses.length,
             itemBuilder: (context, index) {
               final busData = buses[index].data() as Map<String, dynamic>;
-              busData['id'] = buses[index].id;
               
               bool isReversed = busData['origin'] != selectedOrigin;
-
+              
               Map<String, dynamic> adjustedBusData = Map.from(busData);
+              if (args['dateRaw'] != null) {
+                adjustedBusData['travelDate'] = args ['dateRaw'];
+              }
+
+              adjustedBusData['id'] = buses[index].id;
 
               if (isReversed) {
-                // Tukar Kota
                 adjustedBusData['origin'] = selectedOrigin; 
-                adjustedBusData['destination'] = selectedDestination;
-                
-                // Tukar Terminal (Pakai fungsi helper getTerminalName kita tadi)
+                adjustedBusData['destination'] = selectedDestination;                
                 adjustedBusData['terminal_origin'] = getTerminalName(selectedOrigin);
                 adjustedBusData['terminal_dest'] = getTerminalName(selectedDestination);
               }
