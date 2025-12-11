@@ -22,9 +22,12 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   @override
   Widget build(BuildContext context) {
     final bus = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-    final String busId = bus?['id'] ?? ''; // Pastikan ID ini ada!
+    final String busId = bus?['id'] ?? ''; 
 
     final int totalPrice = _selectedSeats.length * seatPrice;
+
+    String dateStr = bus!['travelDate']?.substring(0, 10) ?? DateTime.now().toIso8601String().substring(0, 10);
+    String sessionDocId = '${busId}_$dateStr'; 
 
     return Scaffold(
       backgroundColor: _lightGray,
@@ -43,7 +46,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
             ),
             SizedBox(height: 4.h),
             Text(
-              bus?['name'] ?? 'Bus Selection',
+              bus['name'] ?? 'Bus Selection',
               style: TextStyle(fontSize: 13.sp, color: Colors.white70),
             ),
           ],
@@ -51,19 +54,23 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       ),
       
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('trips').doc(busId).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('trip_sessions')
+            .doc(sessionDocId)
+            .snapshots(),
         builder: (context, snapshot) {
           
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text("Data bus tidak ditemukan"));
-          }
 
-          var busData = snapshot.data!.data() as Map<String, dynamic>;
-          List<dynamic> bookedSeatsDynamic = busData['booked_seats'] ?? [];
-          List<int> alreadyBookedSeats = bookedSeatsDynamic.map((e) => int.parse(e.toString())).toList();
+          List<int> alreadyBookedSeats = [];
+
+          if (snapshot.hasData && snapshot.data!.exists) {
+            var sessionData = snapshot.data!.data() as Map<String, dynamic>;
+            List<dynamic> bookedSeatsDynamic = sessionData['booked_seats'] ?? [];
+            alreadyBookedSeats = bookedSeatsDynamic.map((e) => int.parse(e.toString())).toList();
+          }
 
           return Padding(
             padding: EdgeInsets.all(16.w),
@@ -92,18 +99,16 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                           Expanded(
                             child: ListView.builder(
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: 7, // 7 Baris
+                              itemCount: 7, 
                               itemBuilder: (context, rowIndex) {
                                 return Padding(
                                   padding: EdgeInsets.symmetric(vertical: 8.h),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      // Kiri: 2 kursi
                                       for (int i = 0; i < 2; i++)
                                         _buildSeat(rowIndex * 4 + i, alreadyBookedSeats),
                                       SizedBox(width: 30.w),
-                                      // Kanan: 2 kursi
                                       for (int i = 2; i < 4; i++)
                                         _buildSeat(rowIndex * 4 + i, alreadyBookedSeats),
                                     ],
@@ -162,15 +167,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                               ? null
                               : () {
                                   _confirmBooking(context, busId, bus);
-                                  Navigator.pushNamed(
-                                    context, 
-                                      '/payment',
-                                    arguments: {
-                                      'bus': busData,
-                                      'seats': _selectedSeats,
-                                      'total': _selectedSeats.length * seatPrice,
-                                    }
-                                  );
                                 },
                           child: Text(
                             'Confirm Booking',
@@ -195,7 +191,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
 
   Widget _buildSeat(int index, List<int> alreadyBookedSeats) {
     final isSelected = _selectedSeats.contains(index);
-    
     final isUnavailable = alreadyBookedSeats.contains(index); 
 
     return GestureDetector(
@@ -243,7 +238,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     );
   }
 
-  // --- LOGIKA TRANSAKSI BOOKING (Anti Bentrok) ---
   Future<void> _confirmBooking(BuildContext context, String busId, Map<String, dynamic>? busData) async {
     showDialog(
       context: context,
@@ -252,29 +246,38 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     );
 
     try {
-      final tripRef = FirebaseFirestore.instance.collection('trips').doc(busId);
+      String dateStr = busData!['travelDate']?.substring(0, 10) ?? DateTime.now().toIso8601String().substring(0, 10);
+      String sessionDocId = '${busId}_$dateStr';
+
+      final sessionRef = FirebaseFirestore.instance.collection('trip_sessions').doc(sessionDocId);
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        DocumentSnapshot snapshot = await transaction.get(tripRef);
+        DocumentSnapshot snapshot = await transaction.get(sessionRef);
 
-        if (!snapshot.exists) {
-          throw Exception("Bus trip does not exist!");
+        List<int> currentBooked = [];
+
+        if (snapshot.exists) {
+          List<dynamic> data = snapshot.get('booked_seats') ?? [];
+          currentBooked = data.map((e) => int.parse(e.toString())).toList();
         }
 
-        List<dynamic> currentBooked = snapshot.get('booked_seats') ?? [];
-        List<int> bookedList = currentBooked.map((e) => int.parse(e.toString())).toList();
-
         for (int seat in _selectedSeats) {
-          if (bookedList.contains(seat)) {
+          if (currentBooked.contains(seat)) {
             throw Exception("Oh no! Seat $seat was just taken by someone else."); 
           }
         }
 
-        List<int> newBookedList = [...bookedList, ..._selectedSeats];
+        List<int> newBookedList = [...currentBooked, ..._selectedSeats];
 
-        transaction.update(tripRef, {
-          'booked_seats': newBookedList
-        });
+        if (snapshot.exists) {
+          transaction.update(sessionRef, {'booked_seats': newBookedList});
+        } else {
+          transaction.set(sessionRef, {
+            'tripId': busId,
+            'date': dateStr,
+            'booked_seats': newBookedList
+          });
+        }
       });
 
       Navigator.pop(context); 
